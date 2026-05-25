@@ -1,5 +1,6 @@
 export * from "./adapters/storage.js";
 export * from "./adapters/secrets.js";
+export * from "./adapters/secrets-impls.js";
 export * from "./adapters/identity.js";
 export * from "./adapters/llm.js";
 export * from "./adapters/queue.js";
