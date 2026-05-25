@@ -6,3 +6,4 @@ export * from "./adapters/queue.js";
 export * from "./adapters/telemetry.js";
 export * from "./config/platform-config.js";
 export * from "./pii/redact.js";
+export * from "./profile/profile.js";
