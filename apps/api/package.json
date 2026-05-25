@@ -1,0 +1,40 @@
+{
+  "name": "@databridge/api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DataBridge Fastify API gateway",
+  "main": "./dist/server.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src --ext .ts",
+    "test": "vitest run",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@databridge/platform": "workspace:*",
+    "@databridge/adapter-spec": "workspace:*",
+    "@databridge/rule-core": "workspace:*",
+    "@databridge/dhp-core": "workspace:*",
+    "@databridge/profile-sits": "workspace:*",
+    "@databridge/profile-hesa-tdp": "workspace:*",
+    "fastify": "^4.28.0",
+    "@fastify/cors": "^9.0.1",
+    "@fastify/helmet": "^11.1.1",
+    "@fastify/sensible": "^5.6.0",
+    "pino": "^9.2.0",
+    "pino-pretty": "^11.2.1",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.0",
+    "@typescript-eslint/eslint-plugin": "^7.8.0",
+    "@typescript-eslint/parser": "^7.8.0",
+    "eslint": "^8.57.0",
+    "tsx": "^4.10.0",
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
+  }
+}
