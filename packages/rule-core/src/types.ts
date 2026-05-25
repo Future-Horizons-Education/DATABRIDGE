@@ -97,7 +97,74 @@ export type AuditRule =
   | SqlAuditRule
   | CodelistAuditRule
   | StatisticalAuditRule
-  | LlmAuditRule;
+  | LlmAuditRule
+  | FnAuditRule;
+
+/**
+ * Function-evaluated audit rule — for coding-frame checks, cross-record
+ * integrity, and other validations that do not fit cleanly into SQL.
+ *
+ * The `evaluate` callback receives either a record directly OR a context
+ * object containing `{ value, record, context }`. Implementations should
+ * accept either shape — see the `EvaluateInput` union below.
+ *
+ * Used by profile packs (e.g. profile-hesa-tdp) whose rules are best
+ * expressed as inline TypeScript functions.
+ */
+export interface FnAuditRule {
+  type?: "fn";
+  id: string;
+  /**
+   * Rule family. Permissive string so profiles can use their own taxonomies
+   * (e.g. "H01"-"H07" for HESA, "FORMAT"/"CODING"/"TEMPORAL" for generic
+   * style rules) without needing to match the F01-F13 family enum.
+   */
+  family: RuleFamily | string;
+  /**
+   * Severity. Accepts the canonical RuleSeverity enum plus the alias
+   * "WARNING" (treated equivalent to "WARN") for profile compatibility.
+   */
+  severity: RuleSeverity | "WARNING";
+  /** Optional human-readable name; falls back to label/description. */
+  name?: string;
+  /** Short label, typically used in UI lists. */
+  label?: string;
+  description: string;
+  /** Canonical entity name (e.g. "Student"). */
+  entity?: string;
+  /** Canonical field name (e.g. "HUSID"). */
+  field?: string;
+  /** UCISA benchmark cross-reference. May be null when no benchmark applies. */
+  ucisa_benchmark_ref?: string | null;
+  tags?: string[];
+  enabledByDefault?: boolean;
+  /**
+   * Evaluation function. Accepts either a raw record or a structured input
+   * object with optional `value`, `record`, `context` keys. Implementations
+   * SHOULD accept whichever shape they need.
+   *
+   * Returns `FnRuleResult` synchronously. Async rules should be wired into
+   * the engine via a separate async-evaluator rule variant rather than
+   * returning a Promise here — keeping the synchronous shape lets profile
+   * pack tests assert `.pass` directly without await.
+   */
+  evaluate: (input: any, context?: any) => FnRuleResult;
+}
+
+/** Result returned by a FnAuditRule.evaluate(). */
+export interface FnRuleResult {
+  pass: boolean;
+  message?: string;
+  /** Optional structured detail to attach to the AuditFinding. */
+  detail?: Record<string, unknown>;
+}
+
+/**
+ * Back-compat aliases used by profile packs. New code should prefer the
+ * explicit `FnAuditRule` name.
+ */
+export type Rule = FnAuditRule;
+export type RuleDefinition = FnAuditRule;
 
 /**
  * Runtime context injected into every rule evaluation.

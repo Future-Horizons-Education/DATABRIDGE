@@ -1,4 +1,4 @@
-import type { AuditRule, RuleEvalContext, CodelistAuditRule, StatisticalAuditRule } from "./types.js";
+import type { AuditRule, RuleEvalContext, CodelistAuditRule, StatisticalAuditRule, FnAuditRule } from "./types.js";
 import type { AuditFinding } from "./finding.js";
 import { findingFromSqlRow } from "./finding.js";
 
@@ -114,9 +114,25 @@ export class RuleEngine {
       case "llm":
         // LLM rules are dispatched to the AI Agent Runtime — stub here
         return [];
+      case "fn":
+      case undefined:
+        // Function-evaluated rules are executed by profile-pack runners,
+        // not the SQL-backed RuleEngine. They are accepted here as a no-op
+        // so a mixed rule list does not throw — the profile runner is
+        // responsible for iterating records and invoking `rule.evaluate`.
+        return this.evalFnRule(rule as FnAuditRule, ctx);
       default:
-        throw new Error(`Unknown rule type: ${(rule as AuditRule).type}`);
+        throw new Error(`Unknown rule type: ${(rule as { type?: string }).type}`);
     }
+  }
+
+  private async evalFnRule(
+    _rule: FnAuditRule,
+    _ctx: RuleEvalContext
+  ): Promise<AuditFinding[]> {
+    // Intentional no-op: profile packs (e.g. profile-hesa-tdp) execute
+    // FnAuditRules in their own iteration loop over candidate records.
+    return [];
   }
 
   private async evalSqlRule(
