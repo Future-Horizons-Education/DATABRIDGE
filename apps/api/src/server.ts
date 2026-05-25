@@ -15,6 +15,8 @@ import { adapterRoutes } from "./routes/adapters.js";
 import { profileRoutes } from "./routes/profiles.js";
 import { canonicalRoutes } from "./routes/canonical.js";
 import { auditRoutes } from "./routes/audits.js";
+import { setAuditStore } from "./audit-store.js";
+import { createAuditStore } from "./audit-store-factory.js";
 
 const PORT = Number(process.env["API_PORT"] ?? 3001);
 const HOST = process.env["API_HOST"] ?? "0.0.0.0";
@@ -82,6 +84,11 @@ export async function build(): Promise<FastifyInstance> {
       "/audits/:id",
     ],
   }));
+
+  // Wire the persistent AuditStore if DATABASE_URL is set; otherwise the
+  // in-memory default already installed at module load stays in place.
+  const store = await createAuditStore({ logger: app.log });
+  setAuditStore(store);
 
   await app.register(adapterRoutes);
   await app.register(profileRoutes);

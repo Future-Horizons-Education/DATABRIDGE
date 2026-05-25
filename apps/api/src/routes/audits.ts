@@ -169,7 +169,7 @@ export async function auditRoutes(app: FastifyInstance): Promise<void> {
       body.auditId ??
       // Avoid pulling in another uuid lib — Node 20+ has crypto.randomUUID.
       (await import("node:crypto")).randomUUID();
-    const record: AuditRecord = auditStore.create({
+    const record: AuditRecord = await auditStore.create({
       auditId: provisionalId,
       tenantId: body.tenantId,
       profileId: body.profileId,
@@ -208,7 +208,7 @@ export async function auditRoutes(app: FastifyInstance): Promise<void> {
     if (body.adapterId) {
       const made = instantiateAdapter(body.adapterId, body.adapterConfig);
       if ("error" in made) {
-        auditStore.update(record.auditId, {
+        await auditStore.update(record.auditId, {
           status: "failed",
           error: made.error,
         });
@@ -252,14 +252,14 @@ export async function auditRoutes(app: FastifyInstance): Promise<void> {
       });
     } catch (err) {
       const message = (err as Error).message ?? String(err);
-      auditStore.update(record.auditId, { status: "failed", error: message });
+      await auditStore.update(record.auditId, { status: "failed", error: message });
       app.log.error({ err, auditId: record.auditId }, "audit run failed");
       return reply
         .code(500)
         .send({ error: "audit_run_failed", auditId: record.auditId, message });
     }
 
-    const updated = auditStore.update(record.auditId, {
+    const updated = await auditStore.update(record.auditId, {
       status: "succeeded",
       report,
     });
@@ -269,11 +269,11 @@ export async function auditRoutes(app: FastifyInstance): Promise<void> {
   app.get<{ Querystring: { tenantId?: string } }>("/audits", async (req) => {
     const tenantId = req.query.tenantId;
     const filter = tenantId !== undefined ? { tenantId } : undefined;
-    return { audits: auditStore.list(filter) };
+    return { audits: await auditStore.list(filter) };
   });
 
   app.get<{ Params: { id: string } }>("/audits/:id", async (req, reply) => {
-    const rec = auditStore.get(req.params.id);
+    const rec = await auditStore.get(req.params.id);
     if (!rec) {
       return reply
         .code(404)

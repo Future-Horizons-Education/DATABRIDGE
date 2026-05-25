@@ -19,8 +19,8 @@ describe("apps/api /audits", () => {
   afterAll(async () => {
     await app.close();
   });
-  beforeEach(() => {
-    auditStore.clear();
+  beforeEach(async () => {
+    await auditStore.clear();
   });
 
   it("POST /audits/run returns 400 on missing body fields", async () => {
