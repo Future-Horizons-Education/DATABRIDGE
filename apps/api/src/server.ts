@@ -12,14 +12,19 @@ const PORT = Number(process.env['API_PORT'] ?? 3001);
 const HOST = process.env['API_HOST'] ?? '0.0.0.0';
 
 async function build() {
+  const isProd = process.env['NODE_ENV'] === 'production';
+  const loggerConfig: Record<string, unknown> = {
+    level: process.env['LOG_LEVEL'] ?? 'info',
+  };
+  if (!isProd) {
+    loggerConfig['transport'] = {
+      target: 'pino-pretty',
+      options: { translateTime: 'HH:MM:ss', ignore: 'pid,hostname' },
+    };
+  }
   const app = Fastify({
-    logger: {
-      level: process.env['LOG_LEVEL'] ?? 'info',
-      transport:
-        process.env['NODE_ENV'] === 'production'
-          ? undefined
-          : { target: 'pino-pretty', options: { translateTime: 'HH:MM:ss', ignore: 'pid,hostname' } },
-    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    logger: loggerConfig as any,
   });
 
   await app.register(sensible);
