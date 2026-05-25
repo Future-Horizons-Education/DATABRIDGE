@@ -13,6 +13,7 @@
 
 import { parseAuditArgs, runAuditCmd } from "./audit-cmd.js";
 import { listKnownProfileIds } from "./profile-loader.js";
+import { listKnownAdapterIds } from "./adapter-loader.js";
 
 const HELP = `databridge — DataBridge command-line interface
 
@@ -36,6 +37,9 @@ Optional:
       --max-findings-per-rule  Cap on findings emitted per rule
       --max-findings-total     Cap on total Fn-runner findings
       --pretty | --no-pretty   Force pretty-printed JSON
+  -a, --adapter <id>           Source adapter (one of: ${listKnownAdapterIds().join(", ")})
+      --adapter-config <json>  Adapter config as a JSON object string
+      --resource-map <json>    Resource→entity map as a JSON object string
   -h, --help                   Show this help
 
 Environment:
@@ -45,7 +49,7 @@ Environment:
 Exit codes:
    0  No ERROR or CRITICAL findings
    1  At least one ERROR/CRITICAL finding
-   2  Bad arguments / unknown profile
+   2  Bad arguments / unknown profile / unknown adapter
 `;
 
 async function main(): Promise<number> {

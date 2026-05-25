@@ -30,8 +30,13 @@ import {
   type FieldStats,
   type AuditReport,
 } from "@databridge/rule-core";
+import type {
+  SourceAdapter,
+  AdapterContext,
+} from "@databridge/adapter-spec";
 
 import { findProfile } from "../profile-registry.js";
+import { findAdapter } from "../adapter-registry.js";
 import { auditStore, type AuditRecord } from "../audit-store.js";
 
 /* ---------------------------- request schema ------------------------------ */
@@ -45,6 +50,18 @@ const RunAuditBodyZ = z.object({
   maxFindingsPerRule: z.number().int().positive().optional(),
   /** Optional cap on total findings emitted by Fn runner. */
   maxFindingsTotal: z.number().int().positive().optional(),
+  /**
+   * Optional adapter wiring. When provided AND the profile has Fn rules,
+   * AuditEngine will pull rows from this adapter so Fn rules can fire.
+   */
+  adapterId: z.string().min(1).optional(),
+  adapterConfig: z.record(z.unknown()).optional(),
+  /** Map source-system resource (table/endpoint) → canonical entity name. */
+  resourceMap: z.record(z.string()).optional(),
+  /** Optional PK column per resource (else id/subject_id/pk fallback). */
+  primaryKeyMap: z.record(z.string()).optional(),
+  /** Optional source-system page size hint passed to streamRows. */
+  pageSize: z.number().int().positive().optional(),
 });
 
 type RunAuditBody = z.infer<typeof RunAuditBodyZ>;
@@ -71,6 +88,51 @@ function makeExecutor(): SqlExecutor {
   const url = process.env["DATABASE_URL"];
   if (url) return new PgSqlExecutor({ connectionString: url });
   return new NoopSqlExecutor();
+}
+
+/**
+ * Best-effort AdapterContext for an audit run. Adapters that need real
+ * secrets/logger should be wired via a more capable runtime later; for now
+ * we use the apps/api logger and read straight from process.env via a
+ * minimal SecretAccessor so credentials supplied via env still work.
+ */
+function makeAdapterContext(
+  tenantId: string,
+  connectionId: string,
+  signal: AbortSignal,
+  log: {
+    info: (msg: string, meta?: Record<string, unknown>) => void;
+    warn: (msg: string, meta?: Record<string, unknown>) => void;
+    error: (msg: string, meta?: Record<string, unknown>) => void;
+    debug: (msg: string, meta?: Record<string, unknown>) => void;
+  },
+): AdapterContext {
+  return {
+    tenantId,
+    connectionId,
+    secrets: {
+      async get(key: string) {
+        const v = process.env[key];
+        if (v === undefined) throw new Error(`secret '${key}' not found in env`);
+        return v;
+      },
+    },
+    logger: log,
+    signal,
+  };
+}
+
+function instantiateAdapter(
+  id: string,
+  config: Record<string, unknown> | undefined,
+): SourceAdapter | { error: string } {
+  const entry = findAdapter(id);
+  if (!entry) return { error: `adapter '${id}' not registered` };
+  try {
+    return new entry.Adapter(config ?? {});
+  } catch (err) {
+    return { error: (err as Error).message };
+  }
 }
 
 /* ------------------------- profile → rules extraction --------------------- */
@@ -121,6 +183,7 @@ export async function auditRoutes(app: FastifyInstance): Promise<void> {
       ...(body.maxFindingsTotal !== undefined
         ? { maxFindingsTotal: body.maxFindingsTotal }
         : {}),
+      ...(body.pageSize !== undefined ? { pageSize: body.pageSize } : {}),
     };
     const engine = new AuditEngine(makeExecutor(), engineOpts);
 
@@ -137,13 +200,54 @@ export async function auditRoutes(app: FastifyInstance): Promise<void> {
       signal: abort.signal,
     };
 
+    // If the caller wired an adapter, instantiate it here. We treat
+    // adapter-construction failure as a 400 — the caller asked for a
+    // specific adapter and we can't honour it.
+    let source: SourceAdapter | undefined;
+    let adapterCtx: AdapterContext | undefined;
+    if (body.adapterId) {
+      const made = instantiateAdapter(body.adapterId, body.adapterConfig);
+      if ("error" in made) {
+        auditStore.update(record.auditId, {
+          status: "failed",
+          error: made.error,
+        });
+        return reply.code(400).send({
+          error: "adapter_init_failed",
+          auditId: record.auditId,
+          message: made.error,
+        });
+      }
+      source = made;
+      const childLogger = app.log.child({
+        adapterId: body.adapterId,
+        auditId: record.auditId,
+      });
+      adapterCtx = makeAdapterContext(
+        body.tenantId,
+        `audit:${record.auditId}`,
+        abort.signal,
+        {
+          info: (msg, meta) => childLogger.info(meta ?? {}, msg),
+          warn: (msg, meta) => childLogger.warn(meta ?? {}, msg),
+          error: (msg, meta) => childLogger.error(meta ?? {}, msg),
+          debug: (msg, meta) => childLogger.debug(meta ?? {}, msg),
+        },
+      );
+    }
+
     let report: AuditReport;
     try {
       report = await engine.runAudit({
         auditId: record.auditId,
         tenantId: body.tenantId,
         rules,
-        resourceMap: {},
+        resourceMap: body.resourceMap ?? {},
+        ...(body.primaryKeyMap !== undefined
+          ? { primaryKeyMap: body.primaryKeyMap }
+          : {}),
+        ...(source !== undefined ? { source } : {}),
+        ...(adapterCtx !== undefined ? { adapterCtx } : {}),
         ctx,
       });
     } catch (err) {

@@ -18,6 +18,8 @@
   "dependencies": {
     "@databridge/rule-core": "workspace:*",
     "@databridge/platform": "workspace:*",
+    "@databridge/adapter-spec": "workspace:*",
+    "@databridge/adapter-sits-file": "workspace:*",
     "@databridge/profile-sits": "workspace:*",
     "@databridge/profile-hesa-tdp": "workspace:*"
   },

@@ -122,6 +122,50 @@ describe("apps/api /audits", () => {
     expect(missing.statusCode).toBe(404);
   });
 
+  it("POST /audits/run with adapter wired runs Fn rules without warning", async () => {
+    // sits-file is stubbed to yield empty pages, but plugging it in proves
+    // the end-to-end wiring — the engine accepts the adapter and runs the
+    // Fn pass instead of emitting the 'no source' warning.
+    const res = await app.inject({
+      method: "POST",
+      url: "/audits/run",
+      payload: {
+        profileId: "hesa-tdp",
+        tenantId: "t-with-source",
+        adapterId: "sits-file",
+        adapterConfig: { rootPath: "/tmp/databridge-test" },
+        resourceMap: { STU: "Student" },
+      },
+    });
+    expect(res.statusCode).toBe(200);
+    const rec = res.json() as {
+      status: string;
+      report: { rulesFn: number; rowsScanned: number; warnings: string[] };
+    };
+    expect(rec.status).toBe("succeeded");
+    expect(rec.report.rulesFn).toBeGreaterThan(0);
+    // No warning because a source was supplied.
+    expect(
+      rec.report.warnings.some((w) => w.includes("no source")),
+    ).toBe(false);
+  });
+
+  it("POST /audits/run with unknown adapter returns 400", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/audits/run",
+      payload: {
+        profileId: "sits",
+        tenantId: "t1",
+        adapterId: "does-not-exist",
+      },
+    });
+    expect(res.statusCode).toBe(400);
+    expect((res.json() as { error: string }).error).toBe(
+      "adapter_init_failed",
+    );
+  });
+
   it("POST /audits/run honours caller-supplied auditId", async () => {
     const res = await app.inject({
       method: "POST",

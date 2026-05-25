@@ -76,6 +76,62 @@ describe("parseAuditArgs", () => {
       parseAuditArgs(["--profile", "sits", "--tenant", "t1", "--frobnicate"]),
     ).toThrow(/unknown flag/);
   });
+
+  it("parses --adapter and JSON --adapter-config / --resource-map", () => {
+    const a = parseAuditArgs([
+      "-p",
+      "hesa-tdp",
+      "-t",
+      "t1",
+      "--adapter",
+      "sits-file",
+      "--adapter-config",
+      '{"rootPath":"/tmp/x"}',
+      "--resource-map",
+      '{"STU":"Student"}',
+    ]);
+    expect(a.adapterId).toBe("sits-file");
+    expect(a.adapterConfig).toEqual({ rootPath: "/tmp/x" });
+    expect(a.resourceMap).toEqual({ STU: "Student" });
+  });
+
+  it("supports short -a for --adapter", () => {
+    const a = parseAuditArgs([
+      "-p",
+      "hesa-tdp",
+      "-t",
+      "t1",
+      "-a",
+      "sits-file",
+    ]);
+    expect(a.adapterId).toBe("sits-file");
+  });
+
+  it("throws helpfully on invalid --adapter-config JSON", () => {
+    expect(() =>
+      parseAuditArgs([
+        "-p",
+        "hesa-tdp",
+        "-t",
+        "t1",
+        "--adapter-config",
+        "{not json}",
+      ]),
+    ).toThrow(/--adapter-config: invalid JSON/);
+  });
+
+  it("throws helpfully on invalid --resource-map JSON", () => {
+    expect(() =>
+      parseAuditArgs([
+        "-p",
+        "hesa-tdp",
+        "-t",
+        "t1",
+        "--resource-map",
+        "not-json",
+      ]),
+    ).toThrow(/--resource-map: invalid JSON/);
+  });
 });
 
 describe("runAuditCmd", () => {
@@ -127,5 +183,41 @@ describe("runAuditCmd", () => {
     );
     expect(exitCode).toBe(2);
     expect(h.getErr()).toContain("unknown profile");
+  });
+
+  it("returns exitCode 2 on unknown adapter", async () => {
+    const h = makeIo();
+    const { exitCode } = await runAuditCmd(
+      {
+        profileId: "hesa-tdp",
+        tenantId: "t1",
+        adapterId: "made-up-adapter",
+      },
+      h.io,
+    );
+    expect(exitCode).toBe(2);
+    expect(h.getErr()).toMatch(/adapter 'made-up-adapter' failed to init/);
+  });
+
+  it("runs hesa-tdp with sits-file adapter — no 'no source' warnings", async () => {
+    const h = makeIo();
+    const { report, exitCode } = await runAuditCmd(
+      {
+        profileId: "hesa-tdp",
+        tenantId: "t3",
+        adapterId: "sits-file",
+        adapterConfig: { rootPath: "/tmp/databridge-cli-test" },
+        resourceMap: { STU: "Student" },
+      },
+      h.io,
+    );
+    expect(exitCode).toBe(0);
+    expect(report.rulesFn).toBeGreaterThan(0);
+    // Sanity: with a source wired, the engine should not emit the "no source"
+    // warning that hesa-tdp normally produces in the unwired case.
+    const noSourceWarnings = report.warnings.filter((w) =>
+      /no source/i.test(w),
+    );
+    expect(noSourceWarnings).toHaveLength(0);
   });
 });

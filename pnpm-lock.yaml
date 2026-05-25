@@ -123,6 +123,12 @@ importers:
 
   apps/cli:
     dependencies:
+      '@databridge/adapter-sits-file':
+        specifier: workspace:*
+        version: link:../../packages/adapter-sits-file
+      '@databridge/adapter-spec':
+        specifier: workspace:*
+        version: link:../../packages/adapter-spec
       '@databridge/platform':
         specifier: workspace:*
         version: link:../../packages/platform

@@ -24,6 +24,11 @@ import {
 } from "@databridge/rule-core";
 
 import { resolveProfile, listKnownProfileIds } from "./profile-loader.js";
+import {
+  instantiateAdapter,
+  makeAdapterContext,
+  listKnownAdapterIds,
+} from "./adapter-loader.js";
 
 /* ----------------------------- argv parsing ------------------------------- */
 
@@ -35,6 +40,12 @@ export interface AuditCmdArgs {
   maxFindingsTotal?: number;
   /** Pretty-print JSON (default true for tty, false otherwise). */
   pretty?: boolean;
+  /** Optional adapter wiring — enables Fn rules. */
+  adapterId?: string;
+  /** Adapter config as a JSON string parsed at command time. */
+  adapterConfig?: Record<string, unknown>;
+  /** Resource → entity map, as a JSON string parsed at command time. */
+  resourceMap?: Record<string, string>;
 }
 
 export function parseAuditArgs(argv: string[]): AuditCmdArgs {
@@ -72,6 +83,32 @@ export function parseAuditArgs(argv: string[]): AuditCmdArgs {
       case "--no-pretty":
         args.pretty = false;
         break;
+      case "--adapter":
+      case "-a":
+        args.adapterId = eat();
+        break;
+      case "--adapter-config": {
+        const raw = eat();
+        try {
+          args.adapterConfig = JSON.parse(raw) as Record<string, unknown>;
+        } catch (err) {
+          throw new Error(
+            `--adapter-config: invalid JSON (${(err as Error).message})`,
+          );
+        }
+        break;
+      }
+      case "--resource-map": {
+        const raw = eat();
+        try {
+          args.resourceMap = JSON.parse(raw) as Record<string, string>;
+        } catch (err) {
+          throw new Error(
+            `--resource-map: invalid JSON (${(err as Error).message})`,
+          );
+        }
+        break;
+      }
       default:
         throw new Error(`unknown flag: ${flag}`);
     }
@@ -140,10 +177,35 @@ export async function runAuditCmd(
     signal: new AbortController().signal,
   };
 
+  // Adapter wiring is optional. If absent and the profile has Fn rules,
+  // AuditEngine will record a warning rather than fail.
+  let source: ReturnType<typeof instantiateAdapter> | undefined;
+  if (args.adapterId) {
+    const made = instantiateAdapter(args.adapterId, args.adapterConfig ?? {});
+    if ("error" in made) {
+      stderr(
+        `databridge audit: adapter '${args.adapterId}' failed to init: ${made.error}\n` +
+          `known adapters: ${listKnownAdapterIds().join(", ")}\n`,
+      );
+      return { report: emptyReport(args), exitCode: 2 };
+    }
+    source = made;
+  }
+
+  const adapterCtx = source
+    ? makeAdapterContext(
+        args.tenantId,
+        `cli:${args.profileId}`,
+        new AbortController().signal,
+      )
+    : undefined;
+
   const report = await engine.runAudit({
     tenantId: args.tenantId,
     rules,
-    resourceMap: {},
+    resourceMap: args.resourceMap ?? {},
+    ...(source && !("error" in source) ? { source } : {}),
+    ...(adapterCtx !== undefined ? { adapterCtx } : {}),
     ctx,
   });
 
