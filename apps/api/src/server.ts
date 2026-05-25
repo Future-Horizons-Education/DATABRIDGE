@@ -14,6 +14,7 @@ import { registerAuth, JoseJwtValidator, type TokenValidator } from "./middlewar
 import { adapterRoutes } from "./routes/adapters.js";
 import { profileRoutes } from "./routes/profiles.js";
 import { canonicalRoutes } from "./routes/canonical.js";
+import { auditRoutes } from "./routes/audits.js";
 
 const PORT = Number(process.env["API_PORT"] ?? 3001);
 const HOST = process.env["API_HOST"] ?? "0.0.0.0";
@@ -76,12 +77,16 @@ export async function build(): Promise<FastifyInstance> {
       "/profiles/:id",
       "/canonical/entities",
       "/canonical/entities/:name",
+      "/audits",
+      "/audits/run",
+      "/audits/:id",
     ],
   }));
 
   await app.register(adapterRoutes);
   await app.register(profileRoutes);
   await app.register(canonicalRoutes);
+  await app.register(auditRoutes);
 
   return app;
 }
