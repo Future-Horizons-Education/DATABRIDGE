@@ -333,3 +333,219 @@ describe("AuditEngine — report metadata", () => {
     expect(report.auditId).toBe("audit-123");
   });
 });
+
+/* ------------------------- E3 streaming / concurrency --------------------- */
+
+/**
+ * A paged source that yields rows in chunks via nextCursor so we can verify
+ * the engine truly streams (rather than waiting for one big page).
+ */
+function makePagedSource(
+  pagesByResource: Record<string, SampledRow[][]>,
+  pageDelayMs = 0,
+): SourceAdapter {
+  return {
+    id: "paged",
+    displayName: "Paged",
+    capabilities: {
+      supportsIncremental: false,
+      supportsDictionary: false,
+      supportsSampling: true,
+      supportsCodeLists: false,
+      preferredAuth: "file",
+    },
+    async healthCheck() {
+      return { healthy: true, latencyMs: 0 };
+    },
+    async discoverSchema() {
+      return {
+        adapter: "paged",
+        generatedAt: new Date().toISOString(),
+        resources: [],
+      };
+    },
+    async sampleTable() {
+      return [];
+    },
+    async *streamRows(
+      _ctx: AdapterContext,
+      args: StreamRowsArgs,
+    ): AsyncIterable<StreamRowsPage> {
+      const pages = pagesByResource[args.resource] ?? [];
+      const idx = args.cursor ? Number(args.cursor) : 0;
+      if (idx >= pages.length) return;
+      if (pageDelayMs > 0)
+        await new Promise((r) => setTimeout(r, pageDelayMs));
+      const next = idx + 1;
+      const page: StreamRowsPage = {
+        rows: pages[idx] ?? [],
+        ...(next < pages.length ? { nextCursor: String(next) } : {}),
+      };
+      yield page;
+    },
+    async getCodeLists() {
+      return [];
+    },
+    async getDictionary() {
+      return [];
+    },
+    async getRecordById() {
+      return null;
+    },
+  };
+}
+
+describe("AuditEngine \u2014 E3 streaming", () => {
+  it("streams rows page-by-page across multiple cursors", async () => {
+    const fnRule: FnAuditRule = {
+      id: "P-1",
+      family: "X",
+      severity: "WARN",
+      entity: "Student",
+      field: "code",
+      description: "flag B",
+      evaluate: ({ value }: { value: unknown }) =>
+        value === "B" ? { pass: false, message: "b" } : { pass: true },
+    };
+    const source = makePagedSource({
+      STU: [
+        [{ id: "a", code: "A" }, { id: "b", code: "B" }],
+        [{ id: "c", code: "A" }, { id: "d", code: "B" }],
+        [{ id: "e", code: "A" }],
+      ],
+    });
+    const engine = new AuditEngine(new FakeSqlExecutor());
+    const report = await engine.runAudit({
+      tenantId: "t1",
+      rules: [fnRule],
+      resourceMap: { STU: "Student" },
+      primaryKeyMap: { STU: "id" },
+      source,
+      adapterCtx: makeAdapterCtx(),
+      ctx: makeRuleCtx(),
+    });
+    expect(report.rowsScanned).toBe(5);
+    expect(report.findings.map((f) => f.subjectId).sort()).toEqual(["b", "d"]);
+  });
+
+  it("streams multiple resources sequentially by default", async () => {
+    const fnRule: FnAuditRule = {
+      id: "M-1",
+      family: "X",
+      severity: "WARN",
+      description: "always fail",
+      evaluate: () => ({ pass: false, message: "x" }),
+    };
+    const source = makePagedSource({
+      STU: [[{ id: "s1" }, { id: "s2" }]],
+      ENG: [[{ id: "e1" }]],
+    });
+    const engine = new AuditEngine(new FakeSqlExecutor());
+    const report = await engine.runAudit({
+      tenantId: "t1",
+      rules: [fnRule],
+      resourceMap: { STU: "Student", ENG: "Engagement" },
+      primaryKeyMap: { STU: "id", ENG: "id" },
+      source,
+      adapterCtx: makeAdapterCtx(),
+      ctx: makeRuleCtx(),
+    });
+    expect(report.rowsScanned).toBe(3);
+    expect(report.findings.map((f) => f.subjectId).sort()).toEqual([
+      "e1",
+      "s1",
+      "s2",
+    ]);
+    // findings carry the right entity
+    const entities = new Set(report.findings.map((f) => f.entityType));
+    expect(entities).toEqual(new Set(["Student", "Engagement"]));
+  });
+
+  it("runs resources in parallel when resourceConcurrency > 1", async () => {
+    const fnRule: FnAuditRule = {
+      id: "C-1",
+      family: "X",
+      severity: "WARN",
+      description: "always fail",
+      evaluate: () => ({ pass: false, message: "x" }),
+    };
+    // 20ms delay per page so parallel must be substantially faster than serial.
+    const pages: SampledRow[] = Array.from({ length: 10 }, (_, i) => ({
+      id: `r${i}`,
+    }));
+    const source = makePagedSource(
+      { A: [pages], B: [pages], C: [pages] },
+      20,
+    );
+    const serialEngine = new AuditEngine(new FakeSqlExecutor());
+    const parallelEngine = new AuditEngine(new FakeSqlExecutor(), {
+      resourceConcurrency: 3,
+    });
+    const args = {
+      tenantId: "t1",
+      rules: [fnRule],
+      resourceMap: { A: "E1", B: "E2", C: "E3" },
+      primaryKeyMap: { A: "id", B: "id", C: "id" },
+      source,
+      adapterCtx: makeAdapterCtx(),
+      ctx: makeRuleCtx(),
+    };
+    const t0 = Date.now();
+    const serial = await serialEngine.runAudit(args);
+    const tSerial = Date.now() - t0;
+    const t1 = Date.now();
+    const parallel = await parallelEngine.runAudit(args);
+    const tParallel = Date.now() - t1;
+
+    expect(serial.rowsScanned).toBe(30);
+    expect(parallel.rowsScanned).toBe(30);
+    expect(parallel.findingsTotal).toBe(30);
+    // Parallel should not be slower than serial. Don't make the bound too
+    // tight \u2014 CI is noisy. Serial does ~3\u00d720ms = 60ms, parallel ~20ms.
+    expect(tParallel).toBeLessThan(tSerial);
+  });
+
+  it("honours adapterCtx.signal during streaming", async () => {
+    const seenRows: string[] = [];
+    const fnRule: FnAuditRule = {
+      id: "AB-1",
+      family: "X",
+      severity: "WARN",
+      description: "log + pass",
+      evaluate: ({ record }: { record: Record<string, unknown> }) => {
+        seenRows.push(String(record["id"]));
+        return { pass: true };
+      },
+    };
+    // 20ms-per-page source so the abort timer can fire mid-stream.
+    const source = makePagedSource(
+      {
+        STU: [
+          [{ id: "p1a" }, { id: "p1b" }],
+          [{ id: "p2a" }, { id: "p2b" }],
+          [{ id: "p3a" }],
+        ],
+      },
+      20,
+    );
+    const ac = new AbortController();
+    const adapterCtx: AdapterContext = {
+      ...makeAdapterCtx(),
+      signal: ac.signal,
+    };
+    // Abort after the first page has been delivered (~25ms in).
+    setTimeout(() => ac.abort(), 25);
+    const engine = new AuditEngine(new FakeSqlExecutor());
+    const report = await engine.runAudit({
+      tenantId: "t1",
+      rules: [fnRule],
+      resourceMap: { STU: "Student" },
+      primaryKeyMap: { STU: "id" },
+      source,
+      adapterCtx,
+      ctx: makeRuleCtx(),
+    });
+    // Should not have processed every row \u2014 abort bounded the scan.
+    expect(report.rowsScanned).toBeLessThan(5);
+  });
+});

@@ -80,6 +80,21 @@ export interface AuditEngineOptions {
   maxFindingsTotal?: number;
   /** Optional context provider passed to FnRuleRunner (ref-integrity Sets). */
   contextProvider?: FnRunnerOptions["contextProvider"];
+  /**
+   * Per-resource paging concurrency cap. When > 1, resources in resourceMap
+   * are paged in parallel via a bounded worker pool; their row streams are
+   * merged into a single AsyncIterable fed to FnRuleRunner.
+   *
+   * Default: 1 (sequential — matches pre-E3 ordering).
+   *
+   * Notes:
+   *   - Concurrency > 1 only helps when the adapter's network/IO can be
+   *     parallelised. SitsFileAdapter currently yields empty pages so the
+   *     benefit is theoretical there.
+   *   - Cross-record contextProvider forces materialisation, so concurrency
+   *     only affects the streaming path.
+   */
+  resourceConcurrency?: number;
 }
 
 export interface RunAuditArgs {
@@ -205,14 +220,6 @@ export class AuditEngine {
           `audit has ${fnRules.length} Fn rule(s) but no source/adapterCtx was provided — Fn rules skipped`,
         );
       } else {
-        const rows = await this.collectRows(
-          args.source,
-          args.adapterCtx,
-          args.resourceMap,
-          args.primaryKeyMap,
-        );
-        rowsScanned = rows.length;
-
         const runnerOpts: FnRunnerOptions = {
           ...(this.opts.maxFindingsPerRule !== undefined
             ? { maxFindingsPerRule: this.opts.maxFindingsPerRule }
@@ -225,8 +232,23 @@ export class AuditEngine {
             : {}),
         };
 
+        // True streaming path: count rows as they flow through to the runner.
+        // We wrap streamRows() in a counting iterable so rowsScanned reflects
+        // exactly the rows the Fn runner consumed (including aborted runs).
+        const counter = { n: 0 };
+        const rowStream = this.countingIterable(
+          this.streamRows(
+            args.source,
+            args.adapterCtx,
+            args.resourceMap,
+            args.primaryKeyMap,
+          ),
+          counter,
+        );
+
         const runner = new FnRuleRunner(runnerOpts);
-        fnSummary = await runner.run(fnRules, rows, args.ctx, sink);
+        fnSummary = await runner.run(fnRules, rowStream, args.ctx, sink);
+        rowsScanned = counter.n;
       }
     }
 
@@ -251,60 +273,193 @@ export class AuditEngine {
   }
 
   /**
-   * Pull rows for every resource declared in resourceMap, paging through
-   * the adapter's streamRows() until exhaustion. Returns a flat EntityRow
-   * array — for very large sources callers should partition the audit run
-   * by resource and stream per-resource, but for typical audit volumes
-   * (a few hundred thousand rows) materialising is fine and lets Fn rules
-   * with cross-record context work without a second pass.
+   * Stream rows for every resource declared in resourceMap. Yields EntityRow
+   * one at a time so FnRuleRunner can iterate without buffering. Honours
+   * adapterCtx.signal for early abort.
+   *
+   * Per-resource concurrency is controlled by opts.resourceConcurrency:
+   *   1 (default) — resources are paged sequentially in resourceMap order.
+   *   >1          — resources are paged in parallel using a bounded merge.
    */
-  private async collectRows(
+  private async *streamRows(
     source: SourceAdapter,
     adapterCtx: AdapterContext,
     resourceMap: ResourceEntityMap,
     pkMap: PrimaryKeyMap | undefined,
-  ): Promise<EntityRow[]> {
-    const out: EntityRow[] = [];
-    for (const [resource, entity] of Object.entries(resourceMap)) {
-      let cursor: string | undefined;
-      let index = 0;
-      // eslint-disable-next-line no-constant-condition
-      while (true) {
-        if (adapterCtx.signal.aborted) return out;
-        const streamArgs = {
+  ): AsyncGenerator<EntityRow, void, unknown> {
+    const entries = Object.entries(resourceMap);
+    const concurrency = Math.max(1, this.opts.resourceConcurrency ?? 1);
+
+    if (concurrency === 1 || entries.length <= 1) {
+      for (const [resource, entity] of entries) {
+        if (adapterCtx.signal.aborted) return;
+        yield* this.streamResource(
+          source,
+          adapterCtx,
           resource,
-          ...(cursor !== undefined ? { cursor } : {}),
-          ...(this.opts.pageSize !== undefined
-            ? { pageSize: this.opts.pageSize }
-            : {}),
-        };
-        const iter = source.streamRows(adapterCtx, streamArgs);
-        let receivedAny = false;
-        let nextCursor: string | undefined;
-        for await (const page of iter) {
-          receivedAny = true;
-          for (const row of page.rows) {
-            const subjectId = pickSubjectId(row, resource, pkMap, index);
-            out.push({
-              entity,
-              subjectId,
-              record: row as Record<string, unknown>,
-            });
-            index++;
-          }
-          if (page.nextCursor !== undefined) nextCursor = page.nextCursor;
-          else nextCursor = undefined;
-          // Many adapters return one page per streamRows() call and expose
-          // the next page via nextCursor; we break after the first yielded
-          // page and re-issue streamRows() with the new cursor. This keeps
-          // memory bounded even when the adapter's iterator never terminates.
-          break;
-        }
-        if (!receivedAny) break;
-        if (!nextCursor) break;
-        cursor = nextCursor;
+          entity,
+          pkMap,
+        );
       }
+      return;
     }
-    return out;
+
+    yield* mergeAsync(
+      entries.map(([resource, entity]) =>
+        this.streamResource(source, adapterCtx, resource, entity, pkMap),
+      ),
+      concurrency,
+      adapterCtx.signal,
+    );
+  }
+
+  /**
+   * Page through a single resource, yielding EntityRows one at a time.
+   * Keeps cursor logic local so multiple resources can be paged in parallel
+   * without sharing state.
+   */
+  private async *streamResource(
+    source: SourceAdapter,
+    adapterCtx: AdapterContext,
+    resource: string,
+    entity: string,
+    pkMap: PrimaryKeyMap | undefined,
+  ): AsyncGenerator<EntityRow, void, unknown> {
+    let cursor: string | undefined;
+    let index = 0;
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      if (adapterCtx.signal.aborted) return;
+      const streamArgs = {
+        resource,
+        ...(cursor !== undefined ? { cursor } : {}),
+        ...(this.opts.pageSize !== undefined
+          ? { pageSize: this.opts.pageSize }
+          : {}),
+      };
+      const iter = source.streamRows(adapterCtx, streamArgs);
+      let receivedAny = false;
+      let nextCursor: string | undefined;
+      for await (const page of iter) {
+        receivedAny = true;
+        for (const row of page.rows) {
+          if (adapterCtx.signal.aborted) return;
+          const subjectId = pickSubjectId(row, resource, pkMap, index);
+          yield {
+            entity,
+            subjectId,
+            record: row as Record<string, unknown>,
+          };
+          index++;
+        }
+        if (page.nextCursor !== undefined) nextCursor = page.nextCursor;
+        else nextCursor = undefined;
+        // Many adapters return one page per streamRows() call and expose
+        // the next page via nextCursor; we break after the first yielded
+        // page and re-issue streamRows() with the new cursor. This keeps
+        // memory bounded even when the adapter's iterator never terminates.
+        break;
+      }
+      if (!receivedAny) break;
+      if (!nextCursor) break;
+      cursor = nextCursor;
+    }
+  }
+
+  /**
+   * Wrap an AsyncIterable so consumed rows are counted. The counter object
+   * is mutated in place — read counter.n after iteration ends.
+   */
+  private async *countingIterable<T>(
+    iter: AsyncIterable<T>,
+    counter: { n: number },
+  ): AsyncGenerator<T, void, unknown> {
+    for await (const x of iter) {
+      counter.n++;
+      yield x;
+    }
+  }
+}
+
+/* --------------------------- async merge helper ---------------------------- */
+
+/**
+ * Merge N async iterables into one, running up to `concurrency` at a time.
+ * Order across iterables is non-deterministic — items appear as their
+ * source generators produce them. Used for resource-level parallelism
+ * during streaming row collection.
+ *
+ * Implementation note: we maintain a pool of in-flight `next()` promises
+ * keyed by source index. When one resolves we yield the value and re-arm
+ * that slot from the same source; when a source ends we replace it with
+ * the next pending source (if any). This keeps exactly `concurrency`
+ * generators active at all times until all are drained.
+ */
+async function* mergeAsync<T>(
+  sources: AsyncGenerator<T, void, unknown>[],
+  concurrency: number,
+  signal: AbortSignal,
+): AsyncGenerator<T, void, unknown> {
+  const pending = sources.slice();
+  // Active slots: { source, promise }. promise resolves to {done,value,slot}
+  interface Slot {
+    source: AsyncGenerator<T, void, unknown>;
+    promise: Promise<{ done: boolean; value: T | undefined; slotIdx: number }>;
+  }
+  const active: (Slot | null)[] = [];
+
+  const armSlot = (slotIdx: number): void => {
+    const slot = active[slotIdx];
+    if (!slot) return;
+    slot.promise = slot.source.next().then((r) => ({
+      done: r.done === true,
+      value: (r.done === true ? undefined : (r.value as T)) as T | undefined,
+      slotIdx,
+    }));
+  };
+
+  // Seed up to `concurrency` slots.
+  const initial = Math.min(concurrency, pending.length);
+  for (let i = 0; i < initial; i++) {
+    const source = pending.shift();
+    if (!source) break;
+    const slot: Slot = {
+      source,
+      // placeholder; armSlot replaces it immediately
+      promise: Promise.resolve({
+        done: false,
+        value: undefined as T | undefined,
+        slotIdx: i,
+      }),
+    };
+    active.push(slot);
+    armSlot(i);
+  }
+
+  while (active.some((s) => s !== null)) {
+    if (signal.aborted) return;
+    const live = active
+      .map((s, idx) => (s ? { promise: s.promise, idx } : null))
+      .filter((x): x is { promise: Slot["promise"]; idx: number } => x !== null);
+    if (live.length === 0) break;
+
+    const winner = await Promise.race(live.map((l) => l.promise));
+    const slot = active[winner.slotIdx];
+    if (!slot) continue;
+
+    if (winner.done) {
+      // This source is drained — replace with the next pending, if any.
+      const next = pending.shift();
+      if (next) {
+        active[winner.slotIdx] = { source: next, promise: slot.promise };
+        armSlot(winner.slotIdx);
+      } else {
+        active[winner.slotIdx] = null;
+      }
+      continue;
+    }
+
+    yield winner.value as T;
+    armSlot(winner.slotIdx);
   }
 }
