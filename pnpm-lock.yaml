@@ -38,9 +38,30 @@ importers:
 
   apps/api:
     dependencies:
+      '@databridge/adapter-banner-ethos':
+        specifier: workspace:*
+        version: link:../../packages/adapter-banner-ethos
+      '@databridge/adapter-banner-oracle':
+        specifier: workspace:*
+        version: link:../../packages/adapter-banner-oracle
+      '@databridge/adapter-sits-api':
+        specifier: workspace:*
+        version: link:../../packages/adapter-sits-api
+      '@databridge/adapter-sits-file':
+        specifier: workspace:*
+        version: link:../../packages/adapter-sits-file
+      '@databridge/adapter-sjms5':
+        specifier: workspace:*
+        version: link:../../packages/adapter-sjms5
       '@databridge/adapter-spec':
         specifier: workspace:*
         version: link:../../packages/adapter-spec
+      '@databridge/adapter-workday-raas':
+        specifier: workspace:*
+        version: link:../../packages/adapter-workday-raas
+      '@databridge/canonical':
+        specifier: workspace:*
+        version: link:../../packages/canonical
       '@databridge/dhp-core':
         specifier: workspace:*
         version: link:../../packages/dhp-core
