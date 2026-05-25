@@ -9,6 +9,7 @@ import Fastify, { type FastifyInstance } from "fastify";
 import sensible from "@fastify/sensible";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
+import { pinoRedactConfig } from "@databridge/platform";
 import { adapterRoutes } from "./routes/adapters.js";
 import { profileRoutes } from "./routes/profiles.js";
 import { canonicalRoutes } from "./routes/canonical.js";
@@ -20,6 +21,9 @@ export async function build(): Promise<FastifyInstance> {
   const isProd = process.env["NODE_ENV"] === "production";
   const loggerConfig: Record<string, unknown> = {
     level: process.env["LOG_LEVEL"] ?? "info",
+    // PII redaction at the logger boundary — every log statement runs through this.
+    // Covers email, names, dob, postcodes, phones, NHS numbers, NI numbers, etc.
+    redact: pinoRedactConfig,
   };
   if (!isProd) {
     loggerConfig["transport"] = {
