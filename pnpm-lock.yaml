@@ -80,6 +80,15 @@ importers:
       '@databridge/effective-dating':
         specifier: workspace:*
         version: link:../../packages/effective-dating
+      '@databridge/finding-delta':
+        specifier: workspace:*
+        version: link:../../packages/finding-delta
+      '@databridge/finding-reproducer':
+        specifier: workspace:*
+        version: link:../../packages/finding-reproducer
+      '@databridge/finding-waivers':
+        specifier: workspace:*
+        version: link:../../packages/finding-waivers
       '@databridge/identity-reconciler':
         specifier: workspace:*
         version: link:../../packages/identity-reconciler
@@ -113,6 +122,9 @@ importers:
       '@databridge/rule-core':
         specifier: workspace:*
         version: link:../../packages/rule-core
+      '@databridge/severity-by-surface':
+        specifier: workspace:*
+        version: link:../../packages/severity-by-surface
       '@databridge/target-adapters':
         specifier: workspace:*
         version: link:../../packages/target-adapters
@@ -723,6 +735,72 @@ importers:
         specifier: ^1.6.0
         version: 1.6.1(@types/node@20.19.41)
 
+  packages/finding-delta:
+    dependencies:
+      '@databridge/rule-core':
+        specifier: workspace:*
+        version: link:../rule-core
+    devDependencies:
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^7.8.0
+        version: 7.18.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.9.3))(eslint@8.57.1)(typescript@5.9.3)
+      '@typescript-eslint/parser':
+        specifier: ^7.8.0
+        version: 7.18.0(eslint@8.57.1)(typescript@5.9.3)
+      eslint:
+        specifier: ^8.57.0
+        version: 8.57.1
+      typescript:
+        specifier: ^5.4.5
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.0
+        version: 1.6.1(@types/node@20.19.41)
+
+  packages/finding-reproducer:
+    dependencies:
+      '@databridge/rule-core':
+        specifier: workspace:*
+        version: link:../rule-core
+    devDependencies:
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^7.8.0
+        version: 7.18.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.9.3))(eslint@8.57.1)(typescript@5.9.3)
+      '@typescript-eslint/parser':
+        specifier: ^7.8.0
+        version: 7.18.0(eslint@8.57.1)(typescript@5.9.3)
+      eslint:
+        specifier: ^8.57.0
+        version: 8.57.1
+      typescript:
+        specifier: ^5.4.5
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.0
+        version: 1.6.1(@types/node@20.19.41)
+
+  packages/finding-waivers:
+    dependencies:
+      '@databridge/rule-core':
+        specifier: workspace:*
+        version: link:../rule-core
+    devDependencies:
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^7.8.0
+        version: 7.18.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.9.3))(eslint@8.57.1)(typescript@5.9.3)
+      '@typescript-eslint/parser':
+        specifier: ^7.8.0
+        version: 7.18.0(eslint@8.57.1)(typescript@5.9.3)
+      eslint:
+        specifier: ^8.57.0
+        version: 8.57.1
+      typescript:
+        specifier: ^5.4.5
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.0
+        version: 1.6.1(@types/node@20.19.41)
+
   packages/identity-reconciler:
     dependencies:
       '@databridge/canonical':
@@ -964,6 +1042,46 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^1.5.0
+        version: 1.6.1(@types/node@20.19.41)
+
+  packages/schema-mapper:
+    devDependencies:
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^7.8.0
+        version: 7.18.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.9.3))(eslint@8.57.1)(typescript@5.9.3)
+      '@typescript-eslint/parser':
+        specifier: ^7.8.0
+        version: 7.18.0(eslint@8.57.1)(typescript@5.9.3)
+      eslint:
+        specifier: ^8.57.0
+        version: 8.57.1
+      typescript:
+        specifier: ^5.4.5
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.0
+        version: 1.6.1(@types/node@20.19.41)
+
+  packages/severity-by-surface:
+    dependencies:
+      '@databridge/rule-core':
+        specifier: workspace:*
+        version: link:../rule-core
+    devDependencies:
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^7.8.0
+        version: 7.18.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.9.3))(eslint@8.57.1)(typescript@5.9.3)
+      '@typescript-eslint/parser':
+        specifier: ^7.8.0
+        version: 7.18.0(eslint@8.57.1)(typescript@5.9.3)
+      eslint:
+        specifier: ^8.57.0
+        version: 8.57.1
+      typescript:
+        specifier: ^5.4.5
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.0
         version: 1.6.1(@types/node@20.19.41)
 
   packages/target-adapters:

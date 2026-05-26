@@ -1,0 +1,33 @@
+{
+  "name": "@databridge/finding-waivers",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Phase K1 — waiver/acknowledgement workflow for audit findings. Reviewers can waive a finding for a bounded window with a reason; the store keeps an auditable history of who waived what and when, and surfaces expiry so the next run can re-open it.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src --ext .ts",
+    "test": "vitest run --passWithNoTests",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@databridge/rule-core": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0",
+    "eslint": "^8.57.0",
+    "@typescript-eslint/parser": "^7.8.0",
+    "@typescript-eslint/eslint-plugin": "^7.8.0"
+  }
+}
