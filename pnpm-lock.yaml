@@ -206,6 +206,61 @@ importers:
         specifier: ^1.6.0
         version: 1.6.1(@types/node@20.19.41)
 
+  apps/demo:
+    dependencies:
+      '@databridge/adapter-spec':
+        specifier: workspace:*
+        version: link:../../packages/adapter-spec
+      '@databridge/audit-pack-banner-native':
+        specifier: workspace:*
+        version: link:../../packages/audit-pack-banner-native
+      '@databridge/audit-pack-dynamics365-edu-native':
+        specifier: workspace:*
+        version: link:../../packages/audit-pack-dynamics365-edu-native
+      '@databridge/audit-pack-salesforce-edu-native':
+        specifier: workspace:*
+        version: link:../../packages/audit-pack-salesforce-edu-native
+      '@databridge/audit-pack-sits-native':
+        specifier: workspace:*
+        version: link:../../packages/audit-pack-sits-native
+      '@databridge/codeset-mapper':
+        specifier: workspace:*
+        version: link:../../packages/codeset-mapper
+      '@databridge/findings-integration-prep':
+        specifier: workspace:*
+        version: link:../../packages/findings-integration-prep
+      '@databridge/identity-reconciler':
+        specifier: workspace:*
+        version: link:../../packages/identity-reconciler
+      '@databridge/migration-banner-to-sits':
+        specifier: workspace:*
+        version: link:../../migrations/banner-to-sits
+      '@databridge/migration-sits-to-banner':
+        specifier: workspace:*
+        version: link:../../migrations/sits-to-banner
+      '@databridge/parallel-run-verifier':
+        specifier: workspace:*
+        version: link:../../packages/parallel-run-verifier
+      '@databridge/platform':
+        specifier: workspace:*
+        version: link:../../packages/platform
+      '@databridge/rule-core':
+        specifier: workspace:*
+        version: link:../../packages/rule-core
+    devDependencies:
+      '@types/node':
+        specifier: ^20.12.0
+        version: 20.19.41
+      tsx:
+        specifier: ^4.10.0
+        version: 4.22.3
+      typescript:
+        specifier: ^5.4.5
+        version: 5.9.3
+      vitest:
+        specifier: ^1.5.0
+        version: 1.6.1(@types/node@20.19.41)
+
   apps/web:
     dependencies:
       next:
