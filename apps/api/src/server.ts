@@ -28,6 +28,7 @@ import { codesetMappingRoutes } from "./routes/codeset-mapping.js";
 import { effectiveDatingRoutes } from "./routes/effective-dating.js";
 import { reconciliationRoutes } from "./routes/reconciliation.js";
 import { migrationRoutes } from "./routes/migration.js";
+import { findingsRoutes } from "./routes/findings.js";
 import { setAuditStore } from "./audit-store.js";
 import { createAuditStore } from "./audit-store-factory.js";
 import { createAuditQueue, type AuditQueue } from "./audit-queue.js";
@@ -143,6 +144,14 @@ export async function build(options: BuildOptions = {}): Promise<FastifyInstance
       "/migration/queue/enqueue",
       "/migration/queue/resolve",
       "/migration/queue/skip",
+      "/findings/waivers",
+      "/findings/waivers/ack",
+      "/findings/waivers/waive",
+      "/findings/waivers/revoke",
+      "/findings/waivers/apply",
+      "/findings/delta",
+      "/findings/severity-by-surface",
+      "/findings/reproduce",
     ],
   }));
 
@@ -194,6 +203,7 @@ export async function build(options: BuildOptions = {}): Promise<FastifyInstance
   await app.register(effectiveDatingRoutes);
   await app.register(reconciliationRoutes);
   await app.register(migrationRoutes);
+  await app.register(findingsRoutes);
 
   return app;
 }

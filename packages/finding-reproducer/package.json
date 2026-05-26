@@ -1,0 +1,33 @@
+{
+  "name": "@databridge/finding-reproducer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Phase K4 — reproduce-this-finding. Given an audit finding, assembles the exact SQL/predicate text, the native source row(s) the rule ran against, the canonical projection at the moment the finding was raised, and (if applicable) the target-system shape that would have been written, so a reviewer can debug a finding without re-running the engine.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src --ext .ts",
+    "test": "vitest run --passWithNoTests",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@databridge/rule-core": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0",
+    "eslint": "^8.57.0",
+    "@typescript-eslint/parser": "^7.8.0",
+    "@typescript-eslint/eslint-plugin": "^7.8.0"
+  }
+}
