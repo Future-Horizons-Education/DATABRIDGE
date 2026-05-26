@@ -25,7 +25,9 @@ export type RuleFamily =
   | "SITS-INTEGRITY"
   | "BANNER-INTEGRITY"
   | "WORKDAY-INTEGRITY"
-  | "TECHONE-FIN1-INTEGRITY";
+  | "TECHONE-FIN1-INTEGRITY"
+  | "SALESFORCE-EDU-NATIVE"
+  | "DYNAMICS365-EDU-NATIVE";
 
 /**
  * Base rule definition — all rule types extend this.

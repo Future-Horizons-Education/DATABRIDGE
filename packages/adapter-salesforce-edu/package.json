@@ -1,0 +1,25 @@
+{
+  "name": "@databridge/adapter-salesforce-edu",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "DataBridge source adapter for Salesforce Education Cloud (Contact, Account, hed__ Program_Plan, Affiliation, Course_Enrollment). OAuth2 client-credentials. REST + Bulk API 2.0. Stub-fallback when no secret available.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src --ext .ts",
+    "test": "vitest run --passWithNoTests",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@databridge/platform": "workspace:*",
+    "@databridge/adapter-spec": "workspace:*",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "vitest": "^1.5.0"
+  }
+}
