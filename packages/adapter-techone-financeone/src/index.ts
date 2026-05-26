@@ -1,6 +1,18 @@
-export { TechOneFinanceOneAdapter, SUPPORTED_RESOURCES } from "./adapter.js";
-export type { SupportedResource } from "./adapter.js";
+export {
+  TechOneFinanceOneAdapter,
+  SUPPORTED_RESOURCES,
+  type SupportedResource,
+  type TechOneFinanceOneAdapterOptions,
+} from "./adapter.js";
 export { TechOneFinanceOneConfigSchema, type TechOneFinanceOneConfig } from "./config.js";
+export {
+  TechOneConnectClient,
+  type TechOneConnectClientOptions,
+  type ConnectListResponse,
+  type ConnectGetOptions,
+  type FetchLike,
+} from "./http.js";
+export { CONNECT_RESOURCE_PATH, CONNECT_RESOURCE_PK } from "./resource-map.js";
 export {
   TECHONE_FIN1_NATIVE_RULES,
   TECHONE_FIN1_NATIVE_AUDIT_PACK,

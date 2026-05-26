@@ -4,11 +4,18 @@
  * Read adapter implementing the SourceAdapter contract. Targets the
  * TechOne Connect REST API (§14, §18 of docs/TECHONE_DATA_STRUCTURES.md)
  * as the primary integration. Each canonical "resource" maps to a
- * Connect API entity or, where relevant, a CIA cube view.
+ * Connect API entity.
  *
- * The runtime HTTP client is left as a stub so the contract type-checks
- * and integration tests can run without a live tenant — same pattern as
- * adapter-workday-raas. Live impl drops into the marked methods.
+ * Live HTTP path: the adapter delegates to {@link TechOneConnectClient}
+ * for healthCheck / sampleTable / streamRows / getRecordById whenever
+ * it can resolve the OAuth2 client secret. When the secret cannot be
+ * resolved (e.g. local dev or contract tests with a stub secrets
+ * accessor returning `undefined`) the adapter falls back to a
+ * deterministic stub path so contract tests stay hermetic. The fallback
+ * path matches the v1.0.0 behaviour exactly.
+ *
+ * Tests can also inject a fake HTTP client via the `httpClientFactory`
+ * constructor option to exercise the live path without a real tenant.
  */
 import type {
   SourceAdapter,
@@ -24,6 +31,12 @@ import type {
 import type { SchemaDescriptor, CodeList, DictionaryEntry } from "@databridge/adapter-spec";
 
 import { TechOneFinanceOneConfigSchema, type TechOneFinanceOneConfig } from "./config.js";
+import {
+  TechOneConnectClient,
+  type TechOneConnectClientOptions,
+  type ConnectListResponse,
+} from "./http.js";
+import { CONNECT_RESOURCE_PATH, CONNECT_RESOURCE_PK } from "./resource-map.js";
 
 /**
  * Logical resource names exposed by this adapter. These are CANONICAL
@@ -48,6 +61,22 @@ export const SUPPORTED_RESOURCES = [
 ] as const;
 export type SupportedResource = (typeof SUPPORTED_RESOURCES)[number];
 
+/**
+ * Optional adapter wiring — tests use this to inject a fake HTTP client
+ * (and therefore exercise the live path) without a real tenant.
+ */
+export interface TechOneFinanceOneAdapterOptions {
+  /**
+   * Factory invoked once per AdapterContext-bearing call when the
+   * adapter needs HTTP. Receives the resolved client secret + the
+   * adapter context. Default: instantiates a real
+   * {@link TechOneConnectClient} backed by `globalThis.fetch`.
+   */
+  httpClientFactory?: (
+    args: Pick<TechOneConnectClientOptions, "config" | "clientSecret" | "logger" | "signal">,
+  ) => TechOneConnectClient;
+}
+
 export class TechOneFinanceOneAdapter implements SourceAdapter {
   readonly id = "techone-financeone";
   readonly displayName = "Technology One — Finance One";
@@ -61,9 +90,21 @@ export class TechOneFinanceOneAdapter implements SourceAdapter {
   };
 
   private readonly config: TechOneFinanceOneConfig;
+  private readonly httpClientFactory: NonNullable<
+    TechOneFinanceOneAdapterOptions["httpClientFactory"]
+  >;
 
-  constructor(rawConfig: unknown) {
+  constructor(rawConfig: unknown, options: TechOneFinanceOneAdapterOptions = {}) {
     this.config = TechOneFinanceOneConfigSchema.parse(rawConfig);
+    this.httpClientFactory =
+      options.httpClientFactory ??
+      ((args) =>
+        new TechOneConnectClient({
+          config: args.config,
+          clientSecret: args.clientSecret,
+          logger: args.logger,
+          signal: args.signal,
+        }));
   }
 
   /** Resolved config (read-only) — exposed for tests and diagnostics. */
@@ -74,18 +115,45 @@ export class TechOneFinanceOneAdapter implements SourceAdapter {
   async healthCheck(ctx: AdapterContext): Promise<HealthCheckResult> {
     const start = Date.now();
     ctx.logger.debug("techone-financeone: healthCheck invoked");
-    // Stub: live impl issues GET /connect/api/v1/metadata/health with the
-    // OAuth2 bearer token. Returns optimistic shape for contract tests.
-    return {
-      healthy: true,
-      latencyMs: Date.now() - start,
-      message: "stub healthCheck — replace with live Connect API probe",
-      details: {
-        resources: SUPPORTED_RESOURCES.length,
-        ledgerEntity: this.config.ledgerEntity,
-        ciaFallback: this.config.enableCiaFallback,
-      },
-    };
+
+    const client = await this.tryBuildClient(ctx);
+    if (!client) {
+      // No secret available — return the optimistic stub used by
+      // contract tests and local dev environments.
+      return {
+        healthy: true,
+        latencyMs: Date.now() - start,
+        message: "stub healthCheck — no client secret available",
+        details: {
+          resources: SUPPORTED_RESOURCES.length,
+          ledgerEntity: this.config.ledgerEntity,
+          ciaFallback: this.config.enableCiaFallback,
+          mode: "stub",
+        },
+      };
+    }
+
+    try {
+      // Connect exposes /connect/api/v1/metadata/health.
+      await client.get({ path: "metadata/health" });
+      return {
+        healthy: true,
+        latencyMs: Date.now() - start,
+        message: "Connect API reachable",
+        details: {
+          resources: SUPPORTED_RESOURCES.length,
+          ledgerEntity: this.config.ledgerEntity,
+          mode: "live",
+        },
+      };
+    } catch (err) {
+      return {
+        healthy: false,
+        latencyMs: Date.now() - start,
+        message: err instanceof Error ? err.message : String(err),
+        details: { mode: "live" },
+      };
+    }
   }
 
   async discoverSchema(ctx: AdapterContext): Promise<SchemaDescriptor> {
@@ -152,7 +220,20 @@ export class TechOneFinanceOneAdapter implements SourceAdapter {
       limit: args.limit,
     });
     this.requireSupported(args.resource);
-    return [];
+
+    const client = await this.tryBuildClient(ctx);
+    if (!client) return [];
+
+    const path = CONNECT_RESOURCE_PATH[args.resource as SupportedResource];
+    const page = await client.get<ConnectListResponse>({
+      path,
+      query: {
+        pageNumber: 1,
+        pageSize: Math.max(1, Math.min(args.limit, this.config.pageSize)),
+        ledgerEntity: this.config.ledgerEntity,
+      },
+    });
+    return page.data.slice(0, args.limit).map(toSampledRow);
   }
 
   async *streamRows(
@@ -161,7 +242,32 @@ export class TechOneFinanceOneAdapter implements SourceAdapter {
   ): AsyncIterable<StreamRowsPage> {
     ctx.logger.debug("techone-financeone: streamRows", { resource: args.resource });
     this.requireSupported(args.resource);
-    yield { rows: [], totalRows: 0 };
+
+    const client = await this.tryBuildClient(ctx);
+    if (!client) {
+      yield { rows: [], totalRows: 0 };
+      return;
+    }
+
+    const path = CONNECT_RESOURCE_PATH[args.resource as SupportedResource];
+    const query: Record<string, string | number | boolean | undefined> = {
+      ledgerEntity: this.config.ledgerEntity,
+    };
+    if (args.sinceTimestamp) query["modifiedSince"] = args.sinceTimestamp;
+
+    let yielded = 0;
+    for await (const page of client.paginate<Record<string, unknown>>({ path, query })) {
+      const rows = page.data.map(toSampledRow);
+      yielded += rows.length;
+      const out: StreamRowsPage = {
+        rows,
+        totalRows: page.totalRecords,
+      };
+      if (yielded < page.totalRecords) {
+        out.nextCursor = String(page.pageNumber + 1);
+      }
+      yield out;
+    }
   }
 
   async getCodeLists(ctx: AdapterContext): Promise<CodeList[]> {
@@ -183,7 +289,25 @@ export class TechOneFinanceOneAdapter implements SourceAdapter {
       id: args.id,
     });
     this.requireSupported(args.resource);
-    return null;
+
+    const client = await this.tryBuildClient(ctx);
+    if (!client) return null;
+
+    const resource = args.resource as SupportedResource;
+    const path = `${CONNECT_RESOURCE_PATH[resource]}/${encodeURIComponent(args.id)}`;
+    try {
+      const record = await client.get<Record<string, unknown>>({ path });
+      return toSampledRow(record);
+    } catch (err) {
+      // 404 → null. Other errors propagate.
+      if (err instanceof Error && /\b404\b/.test(err.message)) return null;
+      throw err;
+    }
+  }
+
+  /** Resource canonical PK name. Useful for downstream consumers. */
+  static primaryKeyFor(resource: SupportedResource): string {
+    return CONNECT_RESOURCE_PK[resource];
   }
 
   private requireSupported(resource: string): void {
@@ -191,4 +315,50 @@ export class TechOneFinanceOneAdapter implements SourceAdapter {
       throw new Error(`techone-financeone: resource "${resource}" not supported`);
     }
   }
+
+  /**
+   * Resolve the OAuth2 client secret from the platform secrets accessor
+   * and instantiate the HTTP client. Returns `undefined` if the secret
+   * cannot be resolved — callers fall back to the stub path. This
+   * preserves the v1.0.0 contract for hermetic environments.
+   */
+  private async tryBuildClient(ctx: AdapterContext): Promise<TechOneConnectClient | undefined> {
+    let secret: string | undefined;
+    try {
+      const v = await ctx.secrets.get(this.config.clientSecretKey);
+      if (typeof v === "string" && v.length > 0) secret = v;
+    } catch (err) {
+      ctx.logger.warn("techone-financeone: failed to resolve client secret", {
+        key: this.config.clientSecretKey,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      return undefined;
+    }
+    if (!secret) return undefined;
+
+    return this.httpClientFactory({
+      config: this.config,
+      clientSecret: secret,
+      logger: ctx.logger,
+      signal: ctx.signal,
+    });
+  }
+}
+
+/** Coerce an opaque JSON record into the SampledRow value shape. */
+function toSampledRow(record: Record<string, unknown>): SampledRow {
+  const out: SampledRow = {};
+  for (const [k, v] of Object.entries(record)) {
+    if (v === null || v === undefined) {
+      out[k] = null;
+      continue;
+    }
+    if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") {
+      out[k] = v;
+      continue;
+    }
+    // Nested objects/arrays → JSON. Adapter contract is flat scalars.
+    out[k] = JSON.stringify(v);
+  }
+  return out;
 }
