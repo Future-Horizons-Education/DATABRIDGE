@@ -1,0 +1,23 @@
+{
+  "name": "@databridge/audit-pack-dynamics365-edu-native",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "DataBridge audit pack — 8 source-native rules executing against Microsoft Dynamics 365 Education (Dataverse contact / account / msdyn_program / msdyn_studentprogram / msdyn_courseinstance). Family: DYNAMICS365-EDU-NATIVE.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src --ext .ts",
+    "test": "vitest run --passWithNoTests",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@databridge/rule-core": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "vitest": "^1.5.0"
+  }
+}

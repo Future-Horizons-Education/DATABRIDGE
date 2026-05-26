@@ -419,6 +419,25 @@ importers:
         specifier: ^1.6.0
         version: 1.6.1(@types/node@20.19.41)
 
+  packages/adapter-dynamics365-edu:
+    dependencies:
+      '@databridge/adapter-spec':
+        specifier: workspace:*
+        version: link:../adapter-spec
+      '@databridge/platform':
+        specifier: workspace:*
+        version: link:../platform
+      zod:
+        specifier: ^3.23.0
+        version: 3.25.76
+    devDependencies:
+      typescript:
+        specifier: ^5.4.5
+        version: 5.9.3
+      vitest:
+        specifier: ^1.5.0
+        version: 1.6.1(@types/node@20.19.41)
+
   packages/adapter-salesforce-edu:
     dependencies:
       '@databridge/adapter-spec':
@@ -678,6 +697,19 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^1.6.0
+        version: 1.6.1(@types/node@20.19.41)
+
+  packages/audit-pack-dynamics365-edu-native:
+    dependencies:
+      '@databridge/rule-core':
+        specifier: workspace:*
+        version: link:../rule-core
+    devDependencies:
+      typescript:
+        specifier: ^5.4.5
+        version: 5.9.3
+      vitest:
+        specifier: ^1.5.0
         version: 1.6.1(@types/node@20.19.41)
 
   packages/audit-pack-salesforce-edu-native:

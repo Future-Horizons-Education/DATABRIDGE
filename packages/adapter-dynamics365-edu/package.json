@@ -1,0 +1,25 @@
+{
+  "name": "@databridge/adapter-dynamics365-edu",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "DataBridge source adapter for Microsoft Dynamics 365 Education (Dataverse Web API). Azure AD OAuth2 client-credentials. OData query + EntityDefinitions describe. Stub-fallback when no secret.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src --ext .ts",
+    "test": "vitest run --passWithNoTests",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@databridge/platform": "workspace:*",
+    "@databridge/adapter-spec": "workspace:*",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "vitest": "^1.5.0"
+  }
+}
