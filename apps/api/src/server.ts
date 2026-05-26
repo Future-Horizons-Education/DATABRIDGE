@@ -29,6 +29,7 @@ import { effectiveDatingRoutes } from "./routes/effective-dating.js";
 import { reconciliationRoutes } from "./routes/reconciliation.js";
 import { migrationRoutes } from "./routes/migration.js";
 import { findingsRoutes } from "./routes/findings.js";
+import { rulesCompileRoutes } from "./routes/rules-compile.js";
 import { setAuditStore } from "./audit-store.js";
 import { createAuditStore } from "./audit-store-factory.js";
 import { createAuditQueue, type AuditQueue } from "./audit-queue.js";
@@ -204,6 +205,7 @@ export async function build(options: BuildOptions = {}): Promise<FastifyInstance
   await app.register(reconciliationRoutes);
   await app.register(migrationRoutes);
   await app.register(findingsRoutes);
+  await app.register(rulesCompileRoutes);
 
   return app;
 }
