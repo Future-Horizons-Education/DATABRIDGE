@@ -8,11 +8,21 @@ const VALID_CONFIG = {
   clientSecretKey: "t1-connect-secret",
 };
 
-function makeCtx() {
+/**
+ * Context with a secrets accessor that throws — drives the adapter
+ * into the hermetic stub path used by v1.0.0 contract tests. The
+ * SecretsAdapter contract is `get(): Promise<string>` and throws when
+ * the key is not in the vault, so this matches reality.
+ */
+function makeStubCtx() {
   return {
     tenantId: "test-tenant",
     connectionId: "test-conn",
-    secrets: { get: vi.fn(async () => "dummy") },
+    secrets: {
+      get: vi.fn(async (): Promise<string> => {
+        throw new Error("secret not found");
+      }),
+    },
     logger: {
       info: vi.fn(),
       warn: vi.fn(),
@@ -23,7 +33,7 @@ function makeCtx() {
   };
 }
 
-describe("TechOneFinanceOneAdapter", () => {
+describe("TechOneFinanceOneAdapter — contract & stub path", () => {
   it("declares the correct identity and capabilities", () => {
     const adapter = new TechOneFinanceOneAdapter(VALID_CONFIG);
     expect(adapter.id).toBe("techone-financeone");
@@ -51,21 +61,22 @@ describe("TechOneFinanceOneAdapter", () => {
     ).toThrow();
   });
 
-  it("healthCheck returns a stub healthy result with diagnostic details", async () => {
+  it("healthCheck returns a stub healthy result when no secret is available", async () => {
     const adapter = new TechOneFinanceOneAdapter(VALID_CONFIG);
-    const result = await adapter.healthCheck(makeCtx());
+    const result = await adapter.healthCheck(makeStubCtx());
     expect(result.healthy).toBe(true);
     expect(typeof result.latencyMs).toBe("number");
     expect(result.details).toMatchObject({
       resources: SUPPORTED_RESOURCES.length,
       ledgerEntity: "01",
       ciaFallback: false,
+      mode: "stub",
     });
   });
 
   it("discoverSchema lists every supported resource", async () => {
     const adapter = new TechOneFinanceOneAdapter(VALID_CONFIG);
-    const schema = await adapter.discoverSchema(makeCtx());
+    const schema = await adapter.discoverSchema(makeStubCtx());
     expect(schema.adapter).toBe("techone-financeone");
     expect(schema.resources.map((r) => r.name).sort()).toEqual(
       [...SUPPORTED_RESOURCES].sort(),
@@ -74,7 +85,7 @@ describe("TechOneFinanceOneAdapter", () => {
 
   it("discoverSchema field set is non-trivial for the financial resources", async () => {
     const adapter = new TechOneFinanceOneAdapter(VALID_CONFIG);
-    const schema = await adapter.discoverSchema(makeCtx());
+    const schema = await adapter.discoverSchema(makeStubCtx());
     const invoices = schema.resources.find((r) => r.name === "Invoices");
     expect(invoices).toBeDefined();
     const fieldNames = invoices?.fields.map((f) => f.name) ?? [];
@@ -87,7 +98,7 @@ describe("TechOneFinanceOneAdapter", () => {
   it("rejects unsupported resources in sampleTable", async () => {
     const adapter = new TechOneFinanceOneAdapter(VALID_CONFIG);
     await expect(
-      adapter.sampleTable(makeCtx(), { resource: "DOES_NOT_EXIST", limit: 5 }),
+      adapter.sampleTable(makeStubCtx(), { resource: "DOES_NOT_EXIST", limit: 5 }),
     ).rejects.toThrow(/not supported/);
   });
 
@@ -95,16 +106,16 @@ describe("TechOneFinanceOneAdapter", () => {
     const adapter = new TechOneFinanceOneAdapter(VALID_CONFIG);
     await expect(async () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      for await (const _page of adapter.streamRows(makeCtx(), { resource: "NOPE" })) {
+      for await (const _page of adapter.streamRows(makeStubCtx(), { resource: "NOPE" })) {
         // unreachable
       }
     }).rejects.toThrow(/not supported/);
   });
 
-  it("streamRows yields at least one page for a supported resource", async () => {
+  it("streamRows yields at least one page for a supported resource (stub path)", async () => {
     const adapter = new TechOneFinanceOneAdapter(VALID_CONFIG);
     const pages: unknown[] = [];
-    for await (const page of adapter.streamRows(makeCtx(), { resource: SUPPORTED_RESOURCES[0] })) {
+    for await (const page of adapter.streamRows(makeStubCtx(), { resource: SUPPORTED_RESOURCES[0] })) {
       pages.push(page);
     }
     expect(pages.length).toBeGreaterThanOrEqual(1);
@@ -112,19 +123,19 @@ describe("TechOneFinanceOneAdapter", () => {
 
   it("getRecordById returns null for the stub but validates the resource", async () => {
     const adapter = new TechOneFinanceOneAdapter(VALID_CONFIG);
-    const result = await adapter.getRecordById(makeCtx(), {
+    const result = await adapter.getRecordById(makeStubCtx(), {
       resource: "Customers",
       id: "S12345",
     });
     expect(result).toBeNull();
     await expect(
-      adapter.getRecordById(makeCtx(), { resource: "NOPE", id: "x" }),
+      adapter.getRecordById(makeStubCtx(), { resource: "NOPE", id: "x" }),
     ).rejects.toThrow(/not supported/);
   });
 
   it("getCodeLists and getDictionary return empty arrays in the stub", async () => {
     const adapter = new TechOneFinanceOneAdapter(VALID_CONFIG);
-    await expect(adapter.getCodeLists(makeCtx())).resolves.toEqual([]);
-    await expect(adapter.getDictionary(makeCtx())).resolves.toEqual([]);
+    await expect(adapter.getCodeLists(makeStubCtx())).resolves.toEqual([]);
+    await expect(adapter.getDictionary(makeStubCtx())).resolves.toEqual([]);
   });
 });

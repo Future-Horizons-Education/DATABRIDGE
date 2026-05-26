@@ -21,6 +21,13 @@ export {
   type LearnedMapping,
   type RecordCorrectionInput,
 } from "./learning.js";
+export {
+  FsLearningStore,
+  FS_LEARNING_STORE_VERSION,
+  parseAndValidate as parseFsLearningStoreFile,
+  type FsLearningStoreOptions,
+  type FsLearningStoreFile,
+} from "./learning-fs.js";
 
 import type { SuggestionResult } from "./types.js";
 import { isFieldSuggestion } from "./types.js";
