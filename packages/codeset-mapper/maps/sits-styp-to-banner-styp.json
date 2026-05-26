@@ -1,0 +1,17 @@
+{
+  "id": "sits-styp-to-banner-styp@1.0.0",
+  "name": "SITS STYP → Banner STVSTYP (student type)",
+  "sourceCodelist": "SITS.STYP",
+  "targetCodelist": "BANNER.STVSTYP",
+  "version": "1.0.0",
+  "description": "Reverse mapping of student type: SITS → Banner. Symmetric counterpart of banner-styp-to-sits-styp.",
+  "provenance": "synthetic-default",
+  "entries": [
+    { "sourceCode": "FT", "targetCode": "F", "notes": "First-time / new entrant" },
+    { "sourceCode": "CT", "targetCode": "C", "notes": "Continuing" },
+    { "sourceCode": "RT", "targetCode": "R", "notes": "Returning after suspension" },
+    { "sourceCode": "TR", "targetCode": "T", "notes": "Transfer-in" },
+    { "sourceCode": "VS", "targetCode": "X", "notes": "Visiting / exchange" },
+    { "sourceCode": "PG", "targetCode": "G", "notes": "Postgraduate" }
+  ]
+}

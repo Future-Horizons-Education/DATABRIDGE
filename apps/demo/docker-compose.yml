@@ -1,0 +1,59 @@
+version: "3.9"
+
+# DataBridge demo stack — Postgres + apps/api + apps/web.
+#
+# This file boots the minimum surface needed to talk through the demo
+# script in docs/DEMO_SCRIPT.md. It does NOT include the worker queue,
+# Redis cache, or external secret stores — those are out of scope for
+# the demo build.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: databridge-demo-postgres
+    environment:
+      POSTGRES_USER: databridge
+      POSTGRES_PASSWORD: databridge
+      POSTGRES_DB: databridge
+    ports:
+      - "5433:5432"
+    volumes:
+      - databridge-demo-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U databridge"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    image: node:20-alpine
+    container_name: databridge-demo-api
+    working_dir: /workspace
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABRIDGE_DB_URL: postgres://databridge:databridge@postgres:5432/databridge
+      PORT: "3000"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../..:/workspace
+    command: ["sh", "-c", "corepack enable && pnpm install --frozen-lockfile && pnpm --filter @databridge/api dev"]
+
+  web:
+    image: node:20-alpine
+    container_name: databridge-demo-web
+    working_dir: /workspace
+    depends_on:
+      - api
+    environment:
+      VITE_API_BASE: http://localhost:3000
+    ports:
+      - "5173:5173"
+    volumes:
+      - ../..:/workspace
+    command: ["sh", "-c", "corepack enable && pnpm install --frozen-lockfile && pnpm --filter @databridge/web dev -- --host 0.0.0.0"]
+
+volumes:
+  databridge-demo-pg: {}

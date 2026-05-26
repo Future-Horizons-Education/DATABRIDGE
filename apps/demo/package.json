@@ -1,0 +1,40 @@
+{
+  "name": "@databridge/demo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "DataBridge end-to-end demo runner. Orchestrates Postgres + apps/api + apps/web, loads fixtures, runs audits, runs both Banner↔SITS migrations, runs CRM integration-prep reports.",
+  "main": "./dist/index.js",
+  "bin": {
+    "databridge-demo": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "demo": "tsx src/index.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src --ext .ts",
+    "test": "vitest run --passWithNoTests",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@databridge/platform": "workspace:*",
+    "@databridge/adapter-spec": "workspace:*",
+    "@databridge/migration-banner-to-sits": "workspace:*",
+    "@databridge/migration-sits-to-banner": "workspace:*",
+    "@databridge/audit-pack-banner-native": "workspace:*",
+    "@databridge/audit-pack-sits-native": "workspace:*",
+    "@databridge/audit-pack-salesforce-edu-native": "workspace:*",
+    "@databridge/audit-pack-dynamics365-edu-native": "workspace:*",
+    "@databridge/findings-integration-prep": "workspace:*",
+    "@databridge/parallel-run-verifier": "workspace:*",
+    "@databridge/identity-reconciler": "workspace:*",
+    "@databridge/codeset-mapper": "workspace:*",
+    "@databridge/rule-core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.0",
+    "tsx": "^4.10.0",
+    "typescript": "^5.4.5",
+    "vitest": "^1.5.0"
+  }
+}

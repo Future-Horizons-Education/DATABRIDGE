@@ -1,0 +1,16 @@
+{
+  "id": "banner-sex-to-sits-sex@1.0.0",
+  "name": "Banner SPBPERS_SEX → SITS STU_GEND (gender)",
+  "sourceCodelist": "BANNER.SPBPERS_SEX",
+  "targetCodelist": "SITS.STU_GEND",
+  "version": "1.0.0",
+  "description": "Banner sex code → SITS gender code. Tracks HESA SEXID downstream — see BANNER_DATA_STRUCTURES §3.3 + HESA Coding Manual 2024/25 §SEXID.",
+  "provenance": "published-source",
+  "entries": [
+    { "sourceCode": "M", "targetCode": "M", "notes": "Male" },
+    { "sourceCode": "F", "targetCode": "F", "notes": "Female" },
+    { "sourceCode": "N", "targetCode": "X", "notes": "Non-binary / other" },
+    { "sourceCode": "U", "targetCode": "I", "notes": "Information refused" },
+    { "sourceCode": " ", "targetCode": "I", "notes": "Blank → Information refused" }
+  ]
+}

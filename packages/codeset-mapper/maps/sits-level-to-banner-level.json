@@ -1,0 +1,17 @@
+{
+  "id": "sits-level-to-banner-level@1.0.0",
+  "name": "SITS level-of-study → Banner STVLEVL",
+  "sourceCodelist": "SITS.LEVL",
+  "targetCodelist": "BANNER.STVLEVL",
+  "version": "1.0.0",
+  "description": "Reverse mapping of level-of-study.",
+  "provenance": "synthetic-default",
+  "entries": [
+    { "sourceCode": "L3", "targetCode": "FE", "notes": "Pre-degree / FE" },
+    { "sourceCode": "L4", "targetCode": "UG", "notes": "Cert HE" },
+    { "sourceCode": "L5", "targetCode": "UI", "notes": "Dip HE / Foundation" },
+    { "sourceCode": "L6", "targetCode": "UF", "notes": "Honours level" },
+    { "sourceCode": "L7", "targetCode": "PG", "notes": "Masters" },
+    { "sourceCode": "L8", "targetCode": "PR", "notes": "Doctoral" }
+  ]
+}

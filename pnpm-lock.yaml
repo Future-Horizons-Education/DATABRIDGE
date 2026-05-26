@@ -206,6 +206,61 @@ importers:
         specifier: ^1.6.0
         version: 1.6.1(@types/node@20.19.41)
 
+  apps/demo:
+    dependencies:
+      '@databridge/adapter-spec':
+        specifier: workspace:*
+        version: link:../../packages/adapter-spec
+      '@databridge/audit-pack-banner-native':
+        specifier: workspace:*
+        version: link:../../packages/audit-pack-banner-native
+      '@databridge/audit-pack-dynamics365-edu-native':
+        specifier: workspace:*
+        version: link:../../packages/audit-pack-dynamics365-edu-native
+      '@databridge/audit-pack-salesforce-edu-native':
+        specifier: workspace:*
+        version: link:../../packages/audit-pack-salesforce-edu-native
+      '@databridge/audit-pack-sits-native':
+        specifier: workspace:*
+        version: link:../../packages/audit-pack-sits-native
+      '@databridge/codeset-mapper':
+        specifier: workspace:*
+        version: link:../../packages/codeset-mapper
+      '@databridge/findings-integration-prep':
+        specifier: workspace:*
+        version: link:../../packages/findings-integration-prep
+      '@databridge/identity-reconciler':
+        specifier: workspace:*
+        version: link:../../packages/identity-reconciler
+      '@databridge/migration-banner-to-sits':
+        specifier: workspace:*
+        version: link:../../migrations/banner-to-sits
+      '@databridge/migration-sits-to-banner':
+        specifier: workspace:*
+        version: link:../../migrations/sits-to-banner
+      '@databridge/parallel-run-verifier':
+        specifier: workspace:*
+        version: link:../../packages/parallel-run-verifier
+      '@databridge/platform':
+        specifier: workspace:*
+        version: link:../../packages/platform
+      '@databridge/rule-core':
+        specifier: workspace:*
+        version: link:../../packages/rule-core
+    devDependencies:
+      '@types/node':
+        specifier: ^20.12.0
+        version: 20.19.41
+      tsx:
+        specifier: ^4.10.0
+        version: 4.22.3
+      typescript:
+        specifier: ^5.4.5
+        version: 5.9.3
+      vitest:
+        specifier: ^1.5.0
+        version: 1.6.1(@types/node@20.19.41)
+
   apps/web:
     dependencies:
       next:
@@ -238,6 +293,80 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^1.6.0
+        version: 1.6.1(@types/node@20.19.41)
+
+  migrations/banner-to-sits:
+    dependencies:
+      '@databridge/adapter-banner-ethos':
+        specifier: workspace:*
+        version: link:../../packages/adapter-banner-ethos
+      '@databridge/adapter-banner-oracle':
+        specifier: workspace:*
+        version: link:../../packages/adapter-banner-oracle
+      '@databridge/adapter-spec':
+        specifier: workspace:*
+        version: link:../../packages/adapter-spec
+      '@databridge/codeset-mapper':
+        specifier: workspace:*
+        version: link:../../packages/codeset-mapper
+      '@databridge/identity-reconciler':
+        specifier: workspace:*
+        version: link:../../packages/identity-reconciler
+      '@databridge/parallel-run-verifier':
+        specifier: workspace:*
+        version: link:../../packages/parallel-run-verifier
+      '@databridge/platform':
+        specifier: workspace:*
+        version: link:../../packages/platform
+      '@databridge/profile-banner':
+        specifier: workspace:*
+        version: link:../../profiles/profile-banner
+      '@databridge/target-adapters':
+        specifier: workspace:*
+        version: link:../../packages/target-adapters
+      zod:
+        specifier: ^3.23.0
+        version: 3.25.76
+    devDependencies:
+      typescript:
+        specifier: ^5.4.5
+        version: 5.9.3
+      vitest:
+        specifier: ^1.5.0
+        version: 1.6.1(@types/node@20.19.41)
+
+  migrations/sits-to-banner:
+    dependencies:
+      '@databridge/adapter-sits-api':
+        specifier: workspace:*
+        version: link:../../packages/adapter-sits-api
+      '@databridge/adapter-sits-file':
+        specifier: workspace:*
+        version: link:../../packages/adapter-sits-file
+      '@databridge/adapter-spec':
+        specifier: workspace:*
+        version: link:../../packages/adapter-spec
+      '@databridge/codeset-mapper':
+        specifier: workspace:*
+        version: link:../../packages/codeset-mapper
+      '@databridge/parallel-run-verifier':
+        specifier: workspace:*
+        version: link:../../packages/parallel-run-verifier
+      '@databridge/platform':
+        specifier: workspace:*
+        version: link:../../packages/platform
+      '@databridge/profile-banner':
+        specifier: workspace:*
+        version: link:../../profiles/profile-banner
+      zod:
+        specifier: ^3.23.0
+        version: 3.25.76
+    devDependencies:
+      typescript:
+        specifier: ^5.4.5
+        version: 5.9.3
+      vitest:
+        specifier: ^1.5.0
         version: 1.6.1(@types/node@20.19.41)
 
   migrations/sits-to-hesa-tdp:
@@ -343,6 +472,44 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^1.6.0
+        version: 1.6.1(@types/node@20.19.41)
+
+  packages/adapter-dynamics365-edu:
+    dependencies:
+      '@databridge/adapter-spec':
+        specifier: workspace:*
+        version: link:../adapter-spec
+      '@databridge/platform':
+        specifier: workspace:*
+        version: link:../platform
+      zod:
+        specifier: ^3.23.0
+        version: 3.25.76
+    devDependencies:
+      typescript:
+        specifier: ^5.4.5
+        version: 5.9.3
+      vitest:
+        specifier: ^1.5.0
+        version: 1.6.1(@types/node@20.19.41)
+
+  packages/adapter-salesforce-edu:
+    dependencies:
+      '@databridge/adapter-spec':
+        specifier: workspace:*
+        version: link:../adapter-spec
+      '@databridge/platform':
+        specifier: workspace:*
+        version: link:../platform
+      zod:
+        specifier: ^3.23.0
+        version: 3.25.76
+    devDependencies:
+      typescript:
+        specifier: ^5.4.5
+        version: 5.9.3
+      vitest:
+        specifier: ^1.5.0
         version: 1.6.1(@types/node@20.19.41)
 
   packages/adapter-sits-api:
@@ -585,6 +752,32 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^1.6.0
+        version: 1.6.1(@types/node@20.19.41)
+
+  packages/audit-pack-dynamics365-edu-native:
+    dependencies:
+      '@databridge/rule-core':
+        specifier: workspace:*
+        version: link:../rule-core
+    devDependencies:
+      typescript:
+        specifier: ^5.4.5
+        version: 5.9.3
+      vitest:
+        specifier: ^1.5.0
+        version: 1.6.1(@types/node@20.19.41)
+
+  packages/audit-pack-salesforce-edu-native:
+    dependencies:
+      '@databridge/rule-core':
+        specifier: workspace:*
+        version: link:../rule-core
+    devDependencies:
+      typescript:
+        specifier: ^5.4.5
+        version: 5.9.3
+      vitest:
+        specifier: ^1.5.0
         version: 1.6.1(@types/node@20.19.41)
 
   packages/audit-pack-sits-native:
@@ -888,6 +1081,19 @@ importers:
         specifier: ^1.6.0
         version: 1.6.1(@types/node@20.19.41)
 
+  packages/findings-integration-prep:
+    dependencies:
+      '@databridge/adapter-spec':
+        specifier: workspace:*
+        version: link:../adapter-spec
+    devDependencies:
+      typescript:
+        specifier: ^5.4.5
+        version: 5.9.3
+      vitest:
+        specifier: ^1.5.0
+        version: 1.6.1(@types/node@20.19.41)
+
   packages/identity-reconciler:
     dependencies:
       '@databridge/canonical':
@@ -1132,6 +1338,10 @@ importers:
         version: 1.6.1(@types/node@20.19.41)
 
   packages/schema-mapper:
+    dependencies:
+      pg:
+        specifier: ^8.11.0
+        version: 8.21.0
     devDependencies:
       '@typescript-eslint/eslint-plugin':
         specifier: ^7.8.0
@@ -1191,6 +1401,19 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^1.6.0
+        version: 1.6.1(@types/node@20.19.41)
+
+  profiles/profile-banner:
+    dependencies:
+      '@databridge/adapter-spec':
+        specifier: workspace:*
+        version: link:../../packages/adapter-spec
+    devDependencies:
+      typescript:
+        specifier: ^5.4.5
+        version: 5.9.3
+      vitest:
+        specifier: ^1.5.0
         version: 1.6.1(@types/node@20.19.41)
 
   profiles/profile-hesa-tdp:

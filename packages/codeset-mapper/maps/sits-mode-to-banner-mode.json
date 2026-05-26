@@ -1,0 +1,17 @@
+{
+  "id": "sits-mode-to-banner-mode@1.0.0",
+  "name": "SITS MOA → Banner mode-of-attendance",
+  "sourceCodelist": "SITS.MOA",
+  "targetCodelist": "BANNER.MODE",
+  "version": "1.0.0",
+  "description": "Reverse mapping of mode-of-attendance.",
+  "provenance": "synthetic-default",
+  "entries": [
+    { "sourceCode": "F", "targetCode": "FT", "notes": "Full-time" },
+    { "sourceCode": "P", "targetCode": "PT", "notes": "Part-time" },
+    { "sourceCode": "SW", "targetCode": "SW", "notes": "Sandwich" },
+    { "sourceCode": "DL", "targetCode": "OL", "notes": "Distance learning" },
+    { "sourceCode": "BL", "targetCode": "BL", "notes": "Blended" },
+    { "sourceCode": "RS", "targetCode": "DR", "notes": "Research" }
+  ]
+}

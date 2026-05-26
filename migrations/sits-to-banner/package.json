@@ -1,0 +1,30 @@
+{
+  "name": "@databridge/migration-sits-to-banner",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Migration orchestrator: SITS source (api or file) -> @databridge/canonical -> Banner-shaped load plan (emitted, not executed)",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src --ext .ts",
+    "test": "vitest run --passWithNoTests",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@databridge/platform": "workspace:*",
+    "@databridge/adapter-spec": "workspace:*",
+    "@databridge/adapter-sits-api": "workspace:*",
+    "@databridge/adapter-sits-file": "workspace:*",
+    "@databridge/codeset-mapper": "workspace:*",
+    "@databridge/profile-banner": "workspace:*",
+    "@databridge/parallel-run-verifier": "workspace:*",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "vitest": "^1.5.0"
+  }
+}

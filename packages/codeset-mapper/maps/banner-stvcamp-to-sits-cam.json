@@ -1,0 +1,17 @@
+{
+  "id": "banner-stvcamp-to-sits-cam@1.0.0",
+  "name": "Banner STVCAMP → SITS CAM_CODE",
+  "sourceCodelist": "BANNER.STVCAMP",
+  "targetCodelist": "SITS.CAM",
+  "version": "1.0.0",
+  "description": "Banner campus code → SITS CAM_CODE. Default mapping seeded from typical UK HE deployments (Tribal published docs §4.2). Universities should register a tenant override to encode their actual campus inventory.",
+  "provenance": "synthetic-default",
+  "entries": [
+    { "sourceCode": "MAIN", "targetCode": "M", "notes": "Main / city campus" },
+    { "sourceCode": "NORTH", "targetCode": "N", "notes": "Northern outpost campus" },
+    { "sourceCode": "WEST", "targetCode": "W", "notes": "Western / Healthcare campus" },
+    { "sourceCode": "BUSINESS", "targetCode": "B", "notes": "Business school campus" },
+    { "sourceCode": "DISTANCE", "targetCode": "D", "notes": "Distance learning / no physical campus" },
+    { "sourceCode": "OVS", "targetCode": "O", "notes": "Overseas / TNE delivery site" }
+  ]
+}

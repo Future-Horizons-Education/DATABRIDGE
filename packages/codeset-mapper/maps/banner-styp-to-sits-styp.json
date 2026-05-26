@@ -1,0 +1,17 @@
+{
+  "id": "banner-styp-to-sits-styp@1.0.0",
+  "name": "Banner STVSTYP → SITS STYP (student type)",
+  "sourceCodelist": "BANNER.STVSTYP",
+  "targetCodelist": "SITS.STYP",
+  "version": "1.0.0",
+  "description": "Banner student-type code → SITS programme-stage code. Synthesised from BANNER_DATA_STRUCTURES §3.4 and the Tribal SITS Student Lifecycle Reference §6. Adjust per institution.",
+  "provenance": "synthetic-default",
+  "entries": [
+    { "sourceCode": "F", "targetCode": "FT", "notes": "First-time / new entrant" },
+    { "sourceCode": "C", "targetCode": "CT", "notes": "Continuing student" },
+    { "sourceCode": "R", "targetCode": "RT", "notes": "Returning after suspension" },
+    { "sourceCode": "T", "targetCode": "TR", "notes": "Transfer-in" },
+    { "sourceCode": "X", "targetCode": "VS", "notes": "Visiting / exchange" },
+    { "sourceCode": "G", "targetCode": "PG", "notes": "Graduate / postgraduate" }
+  ]
+}

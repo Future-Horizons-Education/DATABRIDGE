@@ -1,0 +1,17 @@
+{
+  "id": "banner-mode-to-sits-mode@1.0.0",
+  "name": "Banner mode-of-attendance → SITS MOA",
+  "sourceCodelist": "BANNER.MODE",
+  "targetCodelist": "SITS.MOA",
+  "version": "1.0.0",
+  "description": "Banner mode-of-attendance (often modelled in SOATERM_REG_STAT_OPEN_DT semantics) → SITS Mode-of-Attendance code. Cross-walks to HESA MODE downstream.",
+  "provenance": "synthetic-default",
+  "entries": [
+    { "sourceCode": "FT", "targetCode": "F", "notes": "Full-time" },
+    { "sourceCode": "PT", "targetCode": "P", "notes": "Part-time" },
+    { "sourceCode": "SW", "targetCode": "SW", "notes": "Sandwich / placement year" },
+    { "sourceCode": "OL", "targetCode": "DL", "notes": "Online / distance learning" },
+    { "sourceCode": "BL", "targetCode": "BL", "notes": "Blended" },
+    { "sourceCode": "DR", "targetCode": "RS", "notes": "Research (PhD / MPhil)" }
+  ]
+}

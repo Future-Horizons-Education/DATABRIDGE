@@ -1,0 +1,17 @@
+{
+  "id": "banner-level-to-sits-level@1.0.0",
+  "name": "Banner STVLEVL → SITS level-of-study",
+  "sourceCodelist": "BANNER.STVLEVL",
+  "targetCodelist": "SITS.LEVL",
+  "version": "1.0.0",
+  "description": "Banner level code → SITS level-of-study code. Synthesised default — cross-walks to HESA CLEVEL further downstream (Ellucian published docs §3.6).",
+  "provenance": "synthetic-default",
+  "entries": [
+    { "sourceCode": "UG", "targetCode": "L4", "notes": "Undergraduate level 4 (Cert HE)" },
+    { "sourceCode": "UI", "targetCode": "L5", "notes": "Undergraduate intermediate (Dip HE / Foundation)" },
+    { "sourceCode": "UF", "targetCode": "L6", "notes": "Undergraduate final / honours" },
+    { "sourceCode": "PG", "targetCode": "L7", "notes": "Postgraduate taught (Masters)" },
+    { "sourceCode": "PR", "targetCode": "L8", "notes": "Postgraduate research (PhD)" },
+    { "sourceCode": "FE", "targetCode": "L3", "notes": "Further Education / pre-degree" }
+  ]
+}
