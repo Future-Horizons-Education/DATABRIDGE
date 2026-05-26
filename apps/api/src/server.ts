@@ -10,7 +10,13 @@ import sensible from "@fastify/sensible";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import { pinoRedactConfig } from "@databridge/platform";
-import { registerAuth, JoseJwtValidator, type TokenValidator } from "./middleware/auth.js";
+import {
+  registerAuth,
+  JoseJwtValidator,
+  StaticTokenValidator,
+  parseStaticTokensEnv,
+  type TokenValidator,
+} from "./middleware/auth.js";
 import { adapterRoutes } from "./routes/adapters.js";
 import { profileRoutes } from "./routes/profiles.js";
 import { canonicalRoutes } from "./routes/canonical.js";
@@ -44,12 +50,13 @@ export async function build(): Promise<FastifyInstance> {
   await app.register(helmet, { contentSecurityPolicy: false });
   await app.register(cors, { origin: true });
 
-  // OIDC auth wiring — opt-in via OIDC_ISSUER + OIDC_AUDIENCE env vars.
-  // When absent, auth is disabled (suitable for local dev and the current
-  // pre-prod posture). When set, the api requires a bearer JWT on all routes
-  // except /, /healthz, /readyz.
+  // Auth wiring resolves in priority order:
+  //   1. OIDC (OIDC_ISSUER + OIDC_AUDIENCE) — production posture.
+  //   2. Static bearer tokens (DATABRIDGE_API_TOKENS) — staging/CI/CLI.
+  //   3. Disabled — local dev with no auth (logged as a warning).
   const oidcIssuer = process.env["OIDC_ISSUER"];
   const oidcAudience = process.env["OIDC_AUDIENCE"];
+  const staticTokensRaw = process.env["DATABRIDGE_API_TOKENS"];
   if (oidcIssuer && oidcAudience) {
     const validator: TokenValidator = new JoseJwtValidator({
       issuer: oidcIssuer,
@@ -60,8 +67,18 @@ export async function build(): Promise<FastifyInstance> {
     });
     await registerAuth(app, { validator });
     app.log.info({ issuer: oidcIssuer }, "OIDC auth enabled");
+  } else if (staticTokensRaw) {
+    const entries = parseStaticTokensEnv(staticTokensRaw);
+    const validator: TokenValidator = new StaticTokenValidator({ entries });
+    await registerAuth(app, { validator });
+    app.log.info(
+      { tokens: entries.length },
+      "static bearer-token auth enabled (DATABRIDGE_API_TOKENS)",
+    );
   } else {
-    app.log.warn("OIDC auth disabled (OIDC_ISSUER / OIDC_AUDIENCE not set)");
+    app.log.warn(
+      "auth disabled (set OIDC_ISSUER+OIDC_AUDIENCE or DATABRIDGE_API_TOKENS to enable)",
+    );
   }
 
   // Liveness / readiness

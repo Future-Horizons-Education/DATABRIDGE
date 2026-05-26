@@ -9,6 +9,8 @@ import {
   requireRole,
   mapClaimsToPrincipal,
   AuthError,
+  StaticTokenValidator,
+  parseStaticTokensEnv,
   type TokenValidator,
   type DataBridgePrincipal,
 } from "../middleware/auth.js";
@@ -196,5 +198,125 @@ describe("requireRole RBAC", () => {
       headers: { authorization: "Bearer super" },
     });
     expect(res.statusCode).toBe(200);
+  });
+});
+
+describe("StaticTokenValidator", () => {
+  it("resolves a matching token to its principal", async () => {
+    const v = new StaticTokenValidator({
+      entries: [
+        {
+          token: "tok-1",
+          sub: "alice",
+          tenants: [{ tenantId: "t1", roles: ["data:viewer"] }],
+        },
+      ],
+    });
+    const p = await v.validate("tok-1");
+    expect(p.sub).toBe("alice");
+    expect(p.tenants[0]?.roles).toEqual(["data:viewer"]);
+    expect(p.rawClaims).toMatchObject({ auth: "static-token" });
+  });
+
+  it("rejects unknown tokens with AuthError(401)", async () => {
+    const v = new StaticTokenValidator({
+      entries: [{ token: "good", sub: "a", tenants: [] }],
+    });
+    await expect(v.validate("bad")).rejects.toBeInstanceOf(AuthError);
+  });
+
+  it("rejects tokens that differ only in length (no short-circuit leak)", async () => {
+    const v = new StaticTokenValidator({
+      entries: [{ token: "abcd", sub: "a", tenants: [] }],
+    });
+    await expect(v.validate("abc")).rejects.toBeInstanceOf(AuthError);
+    await expect(v.validate("abcde")).rejects.toBeInstanceOf(AuthError);
+  });
+
+  it("plumbs into registerAuth like JoseJwtValidator does", async () => {
+    const v = new StaticTokenValidator({
+      entries: [
+        {
+          token: "tok-ci",
+          sub: "ci-bot",
+          tenants: [{ tenantId: "t1", roles: ["data:viewer"] }],
+        },
+      ],
+    });
+    const app = await buildAppWithAuth(v);
+    const ok = await app.inject({
+      method: "GET",
+      url: "/me",
+      headers: { authorization: "Bearer tok-ci" },
+    });
+    expect(ok.statusCode).toBe(200);
+    expect(ok.json()).toMatchObject({ principal: { sub: "ci-bot" } });
+    const bad = await app.inject({
+      method: "GET",
+      url: "/me",
+      headers: { authorization: "Bearer wrong" },
+    });
+    expect(bad.statusCode).toBe(401);
+    await app.close();
+  });
+});
+
+describe("parseStaticTokensEnv", () => {
+  it("parses a single entry with one tenant and one role", () => {
+    const e = parseStaticTokensEnv("tok-a=alice,t1:data:viewer");
+    expect(e).toHaveLength(1);
+    expect(e[0]).toMatchObject({
+      token: "tok-a",
+      sub: "alice",
+      tenants: [{ tenantId: "t1", roles: ["data:viewer"] }],
+    });
+  });
+
+  it("parses multiple tenants with multiple roles each", () => {
+    const e = parseStaticTokensEnv(
+      "tok-a=alice,t1:data:viewer+audit:viewer|t2:data:steward",
+    );
+    expect(e[0]?.tenants).toEqual([
+      { tenantId: "t1", roles: ["data:viewer", "audit:viewer"] },
+      { tenantId: "t2", roles: ["data:steward"] },
+    ]);
+  });
+
+  it("parses multiple semicolon-separated entries", () => {
+    const e = parseStaticTokensEnv(
+      "tok-a=alice,t1:data:viewer; tok-b=bob,t2:data:steward",
+    );
+    expect(e).toHaveLength(2);
+    expect(e[0]?.sub).toBe("alice");
+    expect(e[1]?.sub).toBe("bob");
+  });
+
+  it("accepts wildcard tenant + superadmin", () => {
+    const e = parseStaticTokensEnv("tok-ci=ci-bot,*:system:superadmin");
+    expect(e[0]?.tenants).toEqual([
+      { tenantId: "*", roles: ["system:superadmin"] },
+    ]);
+  });
+
+  it("rejects unknown role names", () => {
+    expect(() =>
+      parseStaticTokensEnv("tok-x=u,t1:bogus:role"),
+    ).toThrow(/unknown role/);
+  });
+
+  it("rejects malformed entries", () => {
+    expect(() => parseStaticTokensEnv("=alice,t1:data:viewer")).toThrow();
+    expect(() => parseStaticTokensEnv("tok-a=alice")).toThrow(/missing tenant/);
+    expect(() => parseStaticTokensEnv("tok-a=,t1:data:viewer")).toThrow(/missing sub/);
+    expect(() => parseStaticTokensEnv("tok-a=alice,t1")).toThrow(/missing role list/);
+  });
+
+  it("trims whitespace around tokens, subs, tenants, roles", () => {
+    const e = parseStaticTokensEnv("  tok-a = alice , t1 : data:viewer  ");
+    expect(e[0]).toMatchObject({
+      token: "tok-a",
+      sub: "alice",
+      tenants: [{ tenantId: "t1", roles: ["data:viewer"] }],
+    });
   });
 });

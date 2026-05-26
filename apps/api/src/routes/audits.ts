@@ -18,7 +18,7 @@
  * No persistence yet — see audit-store.ts for in-memory storage.
  */
 
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
   AuditEngine,
@@ -38,6 +38,7 @@ import type {
 import { findProfile } from "../profile-registry.js";
 import { findAdapter } from "../adapter-registry.js";
 import { auditStore, type AuditRecord } from "../audit-store.js";
+import { requireRole } from "../middleware/auth.js";
 
 /* ---------------------------- request schema ------------------------------ */
 
@@ -143,10 +144,47 @@ function getRulesFromProfile(profile: unknown): (AuditRule | FnAuditRule)[] {
   return p.rules as (AuditRule | FnAuditRule)[];
 }
 
+/* ----------------------------- RBAC helpers ------------------------------- */
+
+/**
+ * Resolve the tenant id from the POST body for /audits/run. The body is
+ * unparsed at preHandler time — we read it raw and let the route handler
+ * re-validate with zod.
+ */
+function resolveTenantFromBody(req: FastifyRequest): string | undefined {
+  const body = req.body as { tenantId?: unknown } | undefined;
+  if (body && typeof body.tenantId === "string") return body.tenantId;
+  return undefined;
+}
+
+/**
+ * Resolve the tenant id from the querystring for GET /audits list. When
+ * absent the requireRole helper returns 403 — we require callers to scope
+ * list requests to a tenant so we don't accidentally fan out across tenants
+ * for a non-superadmin principal.
+ */
+function resolveTenantFromQuery(req: FastifyRequest): string | undefined {
+  const q = req.query as { tenantId?: unknown } | undefined;
+  if (q && typeof q.tenantId === "string") return q.tenantId;
+  return undefined;
+}
+
 /* ------------------------------- routes ----------------------------------- */
 
 export async function auditRoutes(app: FastifyInstance): Promise<void> {
-  app.post<{ Body: RunAuditBody }>("/audits/run", async (req, reply) => {
+  // POST /audits/run — requires write authority. data:steward and
+  // migration:operator are both legitimate — stewards run quality audits,
+  // operators run pre-migration audits.
+  const requireRunner = requireRole({
+    resolveTenantId: resolveTenantFromBody,
+    anyOf: ["data:steward", "migration:operator"],
+  });
+  const requireListReader = requireRole({
+    resolveTenantId: resolveTenantFromQuery,
+    anyOf: ["audit:viewer", "data:viewer", "data:steward"],
+  });
+
+  app.post<{ Body: RunAuditBody }>("/audits/run", { preHandler: requireRunner }, async (req, reply) => {
     const parsed = RunAuditBodyZ.safeParse(req.body);
     if (!parsed.success) {
       return reply
@@ -266,18 +304,46 @@ export async function auditRoutes(app: FastifyInstance): Promise<void> {
     return reply.code(200).send(updated);
   });
 
-  app.get<{ Querystring: { tenantId?: string } }>("/audits", async (req) => {
-    const tenantId = req.query.tenantId;
-    const filter = tenantId !== undefined ? { tenantId } : undefined;
-    return { audits: await auditStore.list(filter) };
-  });
+  app.get<{ Querystring: { tenantId?: string } }>(
+    "/audits",
+    { preHandler: requireListReader },
+    async (req) => {
+      const tenantId = req.query.tenantId;
+      const filter = tenantId !== undefined ? { tenantId } : undefined;
+      return { audits: await auditStore.list(filter) };
+    },
+  );
 
+  // GET /audits/:id — we can't resolve the tenant until we've fetched the
+  // record, so we apply auth at the handler level. Principals must either be
+  // a system:superadmin or hold a viewer role in the record's tenant.
   app.get<{ Params: { id: string } }>("/audits/:id", async (req, reply) => {
     const rec = await auditStore.get(req.params.id);
     if (!rec) {
       return reply
         .code(404)
         .send({ error: "audit_not_found", id: req.params.id });
+    }
+    const principal = req.principal;
+    if (principal) {
+      const isSuper = principal.tenants.some((t) =>
+        t.roles.includes("system:superadmin"),
+      );
+      if (!isSuper) {
+        const membership = principal.tenants.find((t) => t.tenantId === rec.tenantId);
+        const allowedRoles = ["audit:viewer", "data:viewer", "data:steward"];
+        const ok =
+          membership !== undefined &&
+          allowedRoles.some((r) =>
+            membership.roles.includes(r as (typeof membership.roles)[number]),
+          );
+        if (!ok) {
+          return reply.code(403).send({
+            error: "forbidden",
+            message: `no viewer role in tenant ${rec.tenantId}`,
+          });
+        }
+      }
     }
     return rec;
   });

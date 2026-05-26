@@ -9,11 +9,15 @@ import type { FastifyInstance } from "fastify";
 
 import { build } from "../server.js";
 import { auditStore } from "../audit-store.js";
+import { _resetAuthActiveForTests } from "../middleware/auth.js";
 
 describe("apps/api /audits", () => {
   let app: FastifyInstance;
 
   beforeAll(async () => {
+    // Belt-and-braces: ensure auth is disabled for this suite even if a
+    // prior test in the same worker flipped the module-level flag on.
+    _resetAuthActiveForTests();
     app = await build();
   });
   afterAll(async () => {
