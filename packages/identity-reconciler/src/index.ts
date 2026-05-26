@@ -7,3 +7,12 @@
 export * from "./types.js";
 export { damerauLevenshtein, nameSimilarity } from "./distance.js";
 export { scorePair, reconcile, buildMergeLogEntry } from "./reconciler.js";
+export {
+  buildBidirectionalIndex,
+  resolveCanonicalFromBanner,
+  resolveCanonicalFromSits,
+  bannerToSits,
+  sitsToBanner,
+  type BidirectionalIndex,
+  type BidirectionalIndexEntry,
+} from "./bidirectional-index.js";

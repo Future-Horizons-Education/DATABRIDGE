@@ -1,0 +1,20 @@
+{
+  "id": "sits-ethn-to-banner-ethn@1.0.0",
+  "name": "SITS STU_ETHN → Banner GTVETCT",
+  "sourceCodelist": "SITS.STU_ETHN",
+  "targetCodelist": "BANNER.GTVETCT",
+  "version": "1.0.0",
+  "description": "Reverse mapping of ethnicity. Lossy where Banner's coarser code set doesn't cover every SITS variant — multiple SITS codes can map to the same Banner code; reverse callers should retain the original SITS code as provenance.",
+  "provenance": "published-source",
+  "entries": [
+    { "sourceCode": "10", "targetCode": "WB", "notes": "White - British" },
+    { "sourceCode": "11", "targetCode": "WI", "notes": "White - Irish" },
+    { "sourceCode": "12", "targetCode": "WO", "notes": "White - Other" },
+    { "sourceCode": "21", "targetCode": "MW", "notes": "Mixed - White & Black Caribbean" },
+    { "sourceCode": "22", "targetCode": "MA", "notes": "Mixed - White & Asian" },
+    { "sourceCode": "31", "targetCode": "AI", "notes": "Asian - Indian" },
+    { "sourceCode": "41", "targetCode": "BC", "notes": "Black - Caribbean" },
+    { "sourceCode": "42", "targetCode": "BA", "notes": "Black - African" },
+    { "sourceCode": "98", "targetCode": "ND", "notes": "Not declared" }
+  ]
+}

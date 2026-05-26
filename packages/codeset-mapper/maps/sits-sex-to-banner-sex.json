@@ -1,0 +1,15 @@
+{
+  "id": "sits-sex-to-banner-sex@1.0.0",
+  "name": "SITS STU_GEND → Banner SPBPERS_SEX",
+  "sourceCodelist": "SITS.STU_GEND",
+  "targetCodelist": "BANNER.SPBPERS_SEX",
+  "version": "1.0.0",
+  "description": "Reverse mapping of gender code.",
+  "provenance": "published-source",
+  "entries": [
+    { "sourceCode": "M", "targetCode": "M", "notes": "Male" },
+    { "sourceCode": "F", "targetCode": "F", "notes": "Female" },
+    { "sourceCode": "X", "targetCode": "N", "notes": "Non-binary / other" },
+    { "sourceCode": "I", "targetCode": "U", "notes": "Information refused" }
+  ]
+}

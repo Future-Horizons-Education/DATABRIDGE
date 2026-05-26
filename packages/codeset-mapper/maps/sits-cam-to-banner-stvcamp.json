@@ -1,0 +1,17 @@
+{
+  "id": "sits-cam-to-banner-stvcamp@1.0.0",
+  "name": "SITS CAM_CODE → Banner STVCAMP",
+  "sourceCodelist": "SITS.CAM",
+  "targetCodelist": "BANNER.STVCAMP",
+  "version": "1.0.0",
+  "description": "Reverse mapping of campus code: SITS CAM_CODE → Banner STVCAMP. Synthesised default; institutions should tenant-override.",
+  "provenance": "synthetic-default",
+  "entries": [
+    { "sourceCode": "M", "targetCode": "MAIN", "notes": "Main / city campus" },
+    { "sourceCode": "N", "targetCode": "NORTH", "notes": "Northern outpost" },
+    { "sourceCode": "W", "targetCode": "WEST", "notes": "Western / healthcare" },
+    { "sourceCode": "B", "targetCode": "BUSINESS", "notes": "Business school" },
+    { "sourceCode": "D", "targetCode": "DISTANCE", "notes": "Distance learning" },
+    { "sourceCode": "O", "targetCode": "OVS", "notes": "Overseas / TNE" }
+  ]
+}

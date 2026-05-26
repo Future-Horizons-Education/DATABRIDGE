@@ -1,0 +1,20 @@
+{
+  "id": "banner-ethn-to-sits-ethn@1.0.0",
+  "name": "Banner GTVETCT → SITS STU_ETHN",
+  "sourceCodelist": "BANNER.GTVETCT",
+  "targetCodelist": "SITS.STU_ETHN",
+  "version": "1.0.0",
+  "description": "Banner ethnicity code → SITS ethnicity code. Downstream HESA ETHNIC mapping is handled by ethn-code-to-hesa-ethnic. Derived from BANNER_DATA_STRUCTURES §3.3.",
+  "provenance": "published-source",
+  "entries": [
+    { "sourceCode": "WB", "targetCode": "10", "notes": "White - British" },
+    { "sourceCode": "WI", "targetCode": "11", "notes": "White - Irish" },
+    { "sourceCode": "WO", "targetCode": "12", "notes": "White - Other" },
+    { "sourceCode": "MW", "targetCode": "21", "notes": "Mixed - White & Black Caribbean" },
+    { "sourceCode": "MA", "targetCode": "22", "notes": "Mixed - White & Asian" },
+    { "sourceCode": "AI", "targetCode": "31", "notes": "Asian - Indian" },
+    { "sourceCode": "BC", "targetCode": "41", "notes": "Black - Caribbean" },
+    { "sourceCode": "BA", "targetCode": "42", "notes": "Black - African" },
+    { "sourceCode": "ND", "targetCode": "98", "notes": "Not declared" }
+  ]
+}

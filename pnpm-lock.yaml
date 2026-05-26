@@ -240,6 +240,80 @@ importers:
         specifier: ^1.6.0
         version: 1.6.1(@types/node@20.19.41)
 
+  migrations/banner-to-sits:
+    dependencies:
+      '@databridge/adapter-banner-ethos':
+        specifier: workspace:*
+        version: link:../../packages/adapter-banner-ethos
+      '@databridge/adapter-banner-oracle':
+        specifier: workspace:*
+        version: link:../../packages/adapter-banner-oracle
+      '@databridge/adapter-spec':
+        specifier: workspace:*
+        version: link:../../packages/adapter-spec
+      '@databridge/codeset-mapper':
+        specifier: workspace:*
+        version: link:../../packages/codeset-mapper
+      '@databridge/identity-reconciler':
+        specifier: workspace:*
+        version: link:../../packages/identity-reconciler
+      '@databridge/parallel-run-verifier':
+        specifier: workspace:*
+        version: link:../../packages/parallel-run-verifier
+      '@databridge/platform':
+        specifier: workspace:*
+        version: link:../../packages/platform
+      '@databridge/profile-banner':
+        specifier: workspace:*
+        version: link:../../profiles/profile-banner
+      '@databridge/target-adapters':
+        specifier: workspace:*
+        version: link:../../packages/target-adapters
+      zod:
+        specifier: ^3.23.0
+        version: 3.25.76
+    devDependencies:
+      typescript:
+        specifier: ^5.4.5
+        version: 5.9.3
+      vitest:
+        specifier: ^1.5.0
+        version: 1.6.1(@types/node@20.19.41)
+
+  migrations/sits-to-banner:
+    dependencies:
+      '@databridge/adapter-sits-api':
+        specifier: workspace:*
+        version: link:../../packages/adapter-sits-api
+      '@databridge/adapter-sits-file':
+        specifier: workspace:*
+        version: link:../../packages/adapter-sits-file
+      '@databridge/adapter-spec':
+        specifier: workspace:*
+        version: link:../../packages/adapter-spec
+      '@databridge/codeset-mapper':
+        specifier: workspace:*
+        version: link:../../packages/codeset-mapper
+      '@databridge/parallel-run-verifier':
+        specifier: workspace:*
+        version: link:../../packages/parallel-run-verifier
+      '@databridge/platform':
+        specifier: workspace:*
+        version: link:../../packages/platform
+      '@databridge/profile-banner':
+        specifier: workspace:*
+        version: link:../../profiles/profile-banner
+      zod:
+        specifier: ^3.23.0
+        version: 3.25.76
+    devDependencies:
+      typescript:
+        specifier: ^5.4.5
+        version: 5.9.3
+      vitest:
+        specifier: ^1.5.0
+        version: 1.6.1(@types/node@20.19.41)
+
   migrations/sits-to-hesa-tdp:
     dependencies:
       '@databridge/adapter-sits-api':
@@ -1132,6 +1206,10 @@ importers:
         version: 1.6.1(@types/node@20.19.41)
 
   packages/schema-mapper:
+    dependencies:
+      pg:
+        specifier: ^8.11.0
+        version: 8.21.0
     devDependencies:
       '@typescript-eslint/eslint-plugin':
         specifier: ^7.8.0
@@ -1191,6 +1269,19 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^1.6.0
+        version: 1.6.1(@types/node@20.19.41)
+
+  profiles/profile-banner:
+    dependencies:
+      '@databridge/adapter-spec':
+        specifier: workspace:*
+        version: link:../../packages/adapter-spec
+    devDependencies:
+      typescript:
+        specifier: ^5.4.5
+        version: 5.9.3
+      vitest:
+        specifier: ^1.5.0
         version: 1.6.1(@types/node@20.19.41)
 
   profiles/profile-hesa-tdp:

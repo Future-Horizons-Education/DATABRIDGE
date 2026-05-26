@@ -37,6 +37,13 @@ export interface CodesetMap {
   description?: string;
   /** Tenant id this map belongs to; absent = bundled default. */
   tenantId?: string;
+  /**
+   * Provenance marker. `published-source` = drawn from public HESA / vendor
+   * documentation. `synthetic-default` = a plausible default invented for
+   * demo purposes; universities are expected to register a tenant override.
+   * Absent on bundled maps is treated as `published-source`.
+   */
+  provenance?: "published-source" | "synthetic-default";
   entries: CodesetMapEntry[];
 }
 

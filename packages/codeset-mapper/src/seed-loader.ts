@@ -21,6 +21,18 @@ export const BUNDLED_MAP_FILES = [
   "hecos-to-cip.json",
   "hecos-to-jacs.json",
   "cip-to-hecos.json",
+  "banner-stvcamp-to-sits-cam.json",
+  "banner-styp-to-sits-styp.json",
+  "banner-mode-to-sits-mode.json",
+  "banner-level-to-sits-level.json",
+  "banner-sex-to-sits-sex.json",
+  "banner-ethn-to-sits-ethn.json",
+  "sits-cam-to-banner-stvcamp.json",
+  "sits-styp-to-banner-styp.json",
+  "sits-mode-to-banner-mode.json",
+  "sits-level-to-banner-level.json",
+  "sits-sex-to-banner-sex.json",
+  "sits-ethn-to-banner-ethn.json",
 ] as const;
 
 export type BundledMapFile = (typeof BUNDLED_MAP_FILES)[number];
