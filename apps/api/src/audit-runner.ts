@@ -30,6 +30,7 @@ import type {
 import { findProfile } from "./profile-registry.js";
 import { findAdapter } from "./adapter-registry.js";
 import { auditStore } from "./audit-store.js";
+import { auditProgress } from "./audit-progress.js";
 
 /* --------------------------- public types --------------------------- */
 
@@ -174,6 +175,12 @@ export async function runAuditJob(
   if (!profileEntry) {
     const msg = `profile not found: ${input.profileId}`;
     await auditStore.update(input.auditId, { status: "failed", error: msg });
+    auditProgress.publish({
+      auditId: input.auditId,
+      ts: new Date().toISOString(),
+      status: "failed",
+      message: msg,
+    });
     return { status: "failed", error: msg };
   }
   const rules = getRulesFromProfile(profileEntry.profile);
@@ -183,8 +190,13 @@ export async function runAuditJob(
   inflight.set(input.auditId, abort);
 
   try {
-    // 3. Flip status to running (no-op if already running).
+    // 3. Flip status to running (no-op if already running) and publish.
     await auditStore.update(input.auditId, { status: "running" });
+    auditProgress.publish({
+      auditId: input.auditId,
+      ts: new Date().toISOString(),
+      status: "running",
+    });
 
     // 4. Optional adapter.
     let source: SourceAdapter | undefined;
@@ -196,8 +208,15 @@ export async function runAuditJob(
           status: "failed",
           error: made.error,
         });
+        auditProgress.publish({
+          auditId: input.auditId,
+          ts: new Date().toISOString(),
+          status: "failed",
+          message: made.error,
+        });
         return { status: "failed", error: made.error };
       }
+      // TS already narrowed `made` to SourceAdapter after the error branch above.
       source = made;
       const child = log.child
         ? log.child({ adapterId: input.adapterId, auditId: input.auditId })
@@ -250,12 +269,24 @@ export async function runAuditJob(
           status: "cancelled",
           error: message,
         });
+        auditProgress.publish({
+          auditId: input.auditId,
+          ts: new Date().toISOString(),
+          status: "cancelled",
+          message,
+        });
         log.warn("audit cancelled", { auditId: input.auditId, message });
         return { status: "cancelled" };
       }
       await auditStore.update(input.auditId, {
         status: "failed",
         error: message,
+      });
+      auditProgress.publish({
+        auditId: input.auditId,
+        ts: new Date().toISOString(),
+        status: "failed",
+        message,
       });
       log.error("audit run failed", { auditId: input.auditId, message });
       return { status: "failed", error: message };
@@ -264,6 +295,12 @@ export async function runAuditJob(
     await auditStore.update(input.auditId, {
       status: "succeeded",
       report,
+    });
+    auditProgress.publish({
+      auditId: input.auditId,
+      ts: new Date().toISOString(),
+      status: "succeeded",
+      metrics: { findingsTotal: report.findingsTotal },
     });
     return { status: "succeeded", findingsTotal: report.findingsTotal };
   } finally {

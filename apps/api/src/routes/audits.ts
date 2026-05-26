@@ -27,6 +27,11 @@ import type { AuditQueue } from "../audit-queue.js";
 import { cancelAudit } from "../audit-runner.js";
 import { findProfile } from "../profile-registry.js";
 import { findAdapter } from "../adapter-registry.js";
+import {
+  auditProgress,
+  isTerminalStatus,
+  type AuditProgressEvent,
+} from "../audit-progress.js";
 
 /* ---------------------------- request schema ------------------------------ */
 
@@ -277,6 +282,131 @@ export async function auditRoutes(
       const tenantId = req.query.tenantId;
       const filter = tenantId !== undefined ? { tenantId } : undefined;
       return { audits: await auditStore.list(filter) };
+    },
+  );
+
+  // GET /audits/:id/stream — Server-Sent Events. Streams every status
+  // transition the runner publishes (queued → running → terminal) plus a
+  // periodic heartbeat comment so intermediaries don't kill idle connections.
+  // The endpoint terminates when the audit reaches a terminal state.
+  //
+  // Auth: same surface as GET /audits/:id — viewer roles in the record's
+  // tenant, or superadmin. We apply RBAC at the handler since we need the
+  // record first to resolve the tenant.
+  app.get<{ Params: { id: string } }>(
+    "/audits/:id/stream",
+    async (req, reply) => {
+      const rec = await auditStore.get(req.params.id);
+      if (!rec) {
+        return reply
+          .code(404)
+          .send({ error: "audit_not_found", id: req.params.id });
+      }
+      const principal = req.principal;
+      if (principal) {
+        const isSuper = principal.tenants.some((t) =>
+          t.roles.includes("system:superadmin"),
+        );
+        if (!isSuper) {
+          const membership = principal.tenants.find(
+            (t) => t.tenantId === rec.tenantId,
+          );
+          const allowed = ["audit:viewer", "data:viewer", "data:steward"];
+          const ok =
+            membership !== undefined &&
+            allowed.some((r) =>
+              membership.roles.includes(
+                r as (typeof membership.roles)[number],
+              ),
+            );
+          if (!ok) {
+            return reply.code(403).send({
+              error: "forbidden",
+              message: `no viewer role in tenant ${rec.tenantId}`,
+            });
+          }
+        }
+      }
+
+      // Switch to raw mode so we can write the SSE frames ourselves.
+      // hijack() tells Fastify we own the response — it won't try to send
+      // a reply when the handler returns, which would otherwise fight with
+      // our direct reply.raw.write() / reply.raw.end() calls.
+      reply.hijack();
+      reply.raw.statusCode = 200;
+      reply.raw.setHeader("content-type", "text/event-stream");
+      reply.raw.setHeader("cache-control", "no-cache, no-transform");
+      reply.raw.setHeader("connection", "keep-alive");
+      // Defeat proxy buffering (nginx etc.) so events arrive promptly.
+      reply.raw.setHeader("x-accel-buffering", "no");
+      reply.raw.flushHeaders?.();
+
+      const auditId = req.params.id;
+      let closed = false;
+
+      const write = (ev: AuditProgressEvent | { __heartbeat: true }): void => {
+        if (closed) return;
+        if ("__heartbeat" in ev) {
+          reply.raw.write(`: heartbeat ${Date.now()}\n\n`);
+          return;
+        }
+        const payload = JSON.stringify(ev);
+        reply.raw.write(`event: progress\n`);
+        reply.raw.write(`data: ${payload}\n\n`);
+      };
+
+      // Always send a synthetic 'snapshot' event with the current record
+      // shape so clients have a usable baseline before any live event.
+      write({
+        auditId,
+        ts: new Date().toISOString(),
+        status: rec.status,
+        ...(rec.error !== undefined ? { message: rec.error } : {}),
+      });
+
+      // If the audit is already terminal, close immediately.
+      if (isTerminalStatus(rec.status)) {
+        reply.raw.write("event: end\ndata: {}\n\n");
+        reply.raw.end();
+        return;
+      }
+
+      // Heartbeat every 15s so proxies and clients can detect liveness.
+      // Declared first so the subscription callback can clear it.
+      const heartbeatTimer = setInterval(() => {
+        write({ __heartbeat: true });
+      }, 15_000);
+      // Don't keep the event loop alive just for the heartbeat.
+      heartbeatTimer.unref?.();
+
+      // Subscribe to live events. Replays buffered history first — the
+      // callback can run synchronously, including for a terminal event, so
+      // we use a forward-declared `let` to avoid a TDZ when the listener
+      // calls unsubscribe() during the initial replay tick.
+      let unsubscribe: () => void = () => {};
+      let terminated = false;
+      unsubscribe = auditProgress.subscribe(auditId, (ev) => {
+        if (terminated) return;
+        write(ev);
+        if (isTerminalStatus(ev.status)) {
+          terminated = true;
+          reply.raw.write("event: end\ndata: {}\n\n");
+          closed = true;
+          unsubscribe();
+          clearInterval(heartbeatTimer);
+          reply.raw.end();
+        }
+      });
+
+      // Cleanup when the client disconnects.
+      req.raw.on("close", () => {
+        closed = true;
+        unsubscribe();
+        clearInterval(heartbeatTimer);
+      });
+
+      // We've hijacked the reply; nothing to return.
+      return;
     },
   );
 
