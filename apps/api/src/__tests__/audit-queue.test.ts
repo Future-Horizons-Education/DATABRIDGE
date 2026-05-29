@@ -7,7 +7,11 @@
  *     (without DATABASE_URL it falls back to InProcess with a warn)
  */
 import { describe, it, expect } from "vitest";
-import { InProcessAuditQueue, PgBossAuditQueue, createAuditQueue } from "../audit-queue.js";
+import {
+  InProcessAuditQueue,
+  PgBossAuditQueue,
+  createAuditQueue,
+} from "../audit-queue.js";
 import type { AuditJobInput, AuditRunnerLogger } from "../audit-runner.js";
 
 const silentLogger: AuditRunnerLogger = {

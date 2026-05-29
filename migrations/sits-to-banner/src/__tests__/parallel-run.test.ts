@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { verifyCanonical, type CanonicalRecord } from "@databridge/parallel-run-verifier";
+import {
+  verifyCanonical,
+  type CanonicalRecord,
+} from "@databridge/parallel-run-verifier";
 import { SitsToBannerOrchestrator } from "../orchestrator.js";
 
 function buildFixture(n: number): {
@@ -40,6 +43,8 @@ describe("SitsToBanner parallel-run verifier (500-row fixture)", () => {
   });
 
   it("SUPPORTED_ENTITIES list is non-empty", () => {
-    expect(SitsToBannerOrchestrator.SUPPORTED_ENTITIES.length).toBeGreaterThan(0);
+    expect(SitsToBannerOrchestrator.SUPPORTED_ENTITIES.length).toBeGreaterThan(
+      0,
+    );
   });
 });

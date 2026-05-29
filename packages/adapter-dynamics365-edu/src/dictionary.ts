@@ -4,7 +4,10 @@
  */
 import type { DictionaryEntry } from "@databridge/adapter-spec";
 import type { DataverseClient, EntityDefinition } from "./http.js";
-import { RESOURCE_TO_LOGICAL, type SupportedResource } from "./resource-map.js";
+import {
+  RESOURCE_TO_LOGICAL,
+  type SupportedResource,
+} from "./resource-map.js";
 
 export function mapAttributeType(t: string | undefined): string {
   switch (t) {
@@ -40,7 +43,7 @@ export function mapAttributeType(t: string | undefined): string {
 
 export function describeToDictionary(
   resource: SupportedResource,
-  def: EntityDefinition
+  def: EntityDefinition,
 ): DictionaryEntry[] {
   return def.Attributes.map((a) => {
     const entry: DictionaryEntry = {
@@ -62,7 +65,7 @@ export function describeToDictionary(
 export async function buildDictionary(
   client: DataverseClient,
   resources: readonly SupportedResource[],
-  cache: Map<string, EntityDefinition>
+  cache: Map<string, EntityDefinition>,
 ): Promise<DictionaryEntry[]> {
   const out: DictionaryEntry[] = [];
   for (const r of resources) {

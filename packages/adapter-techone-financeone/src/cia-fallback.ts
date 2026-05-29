@@ -109,7 +109,9 @@ export class CiaCubeClient {
   async get<T = unknown>(opts: ConnectGetOptions): Promise<T> {
     const cubePath = CiaCubeClient.cubePathFor(opts.path);
     if (!cubePath) {
-      throw new Error(`cia-fallback: resource not modelled in cube: ${opts.path}`);
+      throw new Error(
+        `cia-fallback: resource not modelled in cube: ${opts.path}`,
+      );
     }
     const url = this.buildUrl(cubePath, opts.query);
     let attempt = 0;
@@ -144,7 +146,7 @@ export class CiaCubeClient {
 
       const text = await res.text().catch(() => "");
       throw new Error(
-        `cia-fallback: ${res.status} ${res.statusText} on ${url} — ${text.slice(0, 500)}`
+        `cia-fallback: ${res.status} ${res.statusText} on ${url} — ${text.slice(0, 500)}`,
       );
     }
     throw lastError instanceof Error
@@ -154,7 +156,7 @@ export class CiaCubeClient {
 
   /** Cube pagination matches Connect's pageNumber/pageSize shape. */
   async *paginate<T = Record<string, unknown>>(
-    opts: ConnectGetOptions
+    opts: ConnectGetOptions,
   ): AsyncIterable<ConnectListResponse<T>> {
     let pageNumber = 1;
     while (true) {
@@ -175,7 +177,7 @@ export class CiaCubeClient {
 
   private buildUrl(
     cubePath: string,
-    query: Record<string, string | number | boolean | undefined> | undefined
+    query: Record<string, string | number | boolean | undefined> | undefined,
   ): string {
     const base = `${this.config.tenantUrl.replace(/\/$/, "")}/cia/cube/v1/${cubePath}`;
     if (!query) return base;

@@ -6,7 +6,10 @@
  * document (one integration task per entity) for import into a DI workspace.
  * Stub by default — no real workspace is touched.
  */
-import type { AdapterContext, TargetAdapterCapabilities } from "@databridge/adapter-spec";
+import type {
+  AdapterContext,
+  TargetAdapterCapabilities,
+} from "@databridge/adapter-spec";
 import {
   BufferedTargetTransport,
   ConfigurableTargetAdapter,
@@ -42,7 +45,7 @@ const OCI_DI_CAPABILITIES: TargetAdapterCapabilities = {
 export class OracleOciDiTargetAdapter extends ConfigurableTargetAdapter {
   constructor(
     transport: TargetTransport,
-    opts: { requiredFieldsByEntity?: Record<string, readonly string[]> } = {}
+    opts: { requiredFieldsByEntity?: Record<string, readonly string[]> } = {},
   ) {
     const spec: ConfigurableTargetAdapterSpec = {
       id: "oracle-oci-di",
@@ -59,7 +62,7 @@ export class OracleOciDiTargetAdapter extends ConfigurableTargetAdapter {
 /** Render an OCI Data Integration task-definition document. */
 export function renderOciDiTasks(
   cfg: OracleOciDiConfig,
-  transport: BufferedTargetTransport
+  transport: BufferedTargetTransport,
 ): CloudArtifact {
   const project = cfg.projectName ?? "databridge";
   const dataAsset = cfg.targetDataAssetKey ?? "DATAASSET_ADW";
@@ -92,19 +95,21 @@ export interface BuildOracleOciDiOptions {
 export async function buildOracleOciDiTarget(
   ctx: AdapterContext,
   cfg: OracleOciDiConfig,
-  opts: BuildOracleOciDiOptions = {}
+  opts: BuildOracleOciDiOptions = {},
 ): Promise<CloudTargetBundle> {
   const credential = await resolveOracleCredential(
     ctx,
     cfg.auth,
-    opts.tokenProvider ? { tokenProvider: opts.tokenProvider } : {}
+    opts.tokenProvider ? { tokenProvider: opts.tokenProvider } : {},
   );
   const transport = new BufferedTargetTransport(
-    opts.sink ? { idPrefix: "ocidi", sink: opts.sink } : { idPrefix: "ocidi" }
+    opts.sink ? { idPrefix: "ocidi", sink: opts.sink } : { idPrefix: "ocidi" },
   );
   const adapter = new OracleOciDiTargetAdapter(
     transport,
-    opts.requiredFieldsByEntity ? { requiredFieldsByEntity: opts.requiredFieldsByEntity } : {}
+    opts.requiredFieldsByEntity
+      ? { requiredFieldsByEntity: opts.requiredFieldsByEntity }
+      : {},
   );
   return {
     adapter,

@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { WORKDAY_NATIVE_RULES, WORKDAY_NATIVE_AUDIT_PACK } from "../index.js";
+import {
+  WORKDAY_NATIVE_RULES,
+  WORKDAY_NATIVE_AUDIT_PACK,
+} from "../index.js";
 
 describe("@databridge/audit-pack-workday-native", () => {
   it("ships exactly 16 rules", () => {

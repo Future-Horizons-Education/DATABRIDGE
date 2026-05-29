@@ -1,10 +1,13 @@
-import type { SourceKeys } from "@databridge/canonical";
+import type { SourceKeys } from '@databridge/canonical';
 
 /**
  * Merge two SourceKeys maps. Later values for the same (system, key) win,
  * but neither map is mutated.
  */
-export function mergeSourceKeys(a: SourceKeys | undefined, b: SourceKeys | undefined): SourceKeys {
+export function mergeSourceKeys(
+  a: SourceKeys | undefined,
+  b: SourceKeys | undefined,
+): SourceKeys {
   const out: SourceKeys = {};
   for (const [sys, keys] of Object.entries(a ?? {})) {
     out[sys] = { ...keys };
@@ -20,7 +23,7 @@ export function mergeSourceKeys(a: SourceKeys | undefined, b: SourceKeys | undef
 export function getNativeKey(
   sourceKeys: SourceKeys | undefined,
   system: string,
-  keyName: string
+  keyName: string,
 ): string | undefined {
   return sourceKeys?.[system]?.[keyName];
 }
@@ -30,7 +33,7 @@ export function setNativeKey(
   sourceKeys: SourceKeys | undefined,
   system: string,
   keyName: string,
-  value: string
+  value: string,
 ): SourceKeys {
   const existing = sourceKeys?.[system] ?? {};
   return {
@@ -53,7 +56,7 @@ export interface SourceKeyMismatch {
 
 export function verifySourceKeys(
   sourceKeys: SourceKeys | undefined,
-  expected: Array<{ system: string; key: string; value: string }>
+  expected: Array<{ system: string; key: string; value: string }>,
 ): SourceKeyMismatch[] {
   const mismatches: SourceKeyMismatch[] = [];
   for (const e of expected) {

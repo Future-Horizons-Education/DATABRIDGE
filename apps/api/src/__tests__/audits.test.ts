@@ -151,7 +151,9 @@ describe("apps/api /audits", () => {
     expect(rec.status).toBe("succeeded");
     expect(rec.report.rulesFn).toBeGreaterThan(0);
     // No warning because a source was supplied.
-    expect(rec.report.warnings.some((w) => w.includes("no source"))).toBe(false);
+    expect(
+      rec.report.warnings.some((w) => w.includes("no source")),
+    ).toBe(false);
   });
 
   it("POST /audits/run with unknown adapter returns 400", async () => {
@@ -165,7 +167,9 @@ describe("apps/api /audits", () => {
       },
     });
     expect(res.statusCode).toBe(400);
-    expect((res.json() as { error: string }).error).toBe("adapter_init_failed");
+    expect((res.json() as { error: string }).error).toBe(
+      "adapter_init_failed",
+    );
   });
 
   it("POST /audits/run honours caller-supplied auditId", async () => {
@@ -179,6 +183,8 @@ describe("apps/api /audits", () => {
       },
     });
     expect(res.statusCode).toBe(200);
-    expect((res.json() as { auditId: string }).auditId).toBe("custom-audit-xyz");
+    expect((res.json() as { auditId: string }).auditId).toBe(
+      "custom-audit-xyz",
+    );
   });
 });

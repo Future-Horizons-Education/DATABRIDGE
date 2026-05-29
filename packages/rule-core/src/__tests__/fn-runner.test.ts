@@ -14,7 +14,11 @@
  *   - AbortSignal halts iteration
  */
 import { describe, it, expect } from "vitest";
-import { FnRuleRunner, normaliseSeverity, type EntityRow } from "../fn-runner.js";
+import {
+  FnRuleRunner,
+  normaliseSeverity,
+  type EntityRow,
+} from "../fn-runner.js";
 import type { AuditFinding } from "../finding.js";
 import type { FnAuditRule, RuleEvalContext } from "../types.js";
 
@@ -50,7 +54,9 @@ const failRule = (id: string, entity?: string, field?: string): FnAuditRule => (
 
 describe("FnRuleRunner — basic dispatch", () => {
   it("returns clean summary when no rules fail", async () => {
-    const rows: EntityRow[] = [{ entity: "Student", subjectId: "s1", record: { id: "s1" } }];
+    const rows: EntityRow[] = [
+      { entity: "Student", subjectId: "s1", record: { id: "s1" } },
+    ];
     const findings: AuditFinding[] = [];
     const runner = new FnRuleRunner();
     const sum = await runner.run([passRule], rows, makeCtx(), (f) => {
@@ -69,9 +75,12 @@ describe("FnRuleRunner — basic dispatch", () => {
       { entity: "Engagement", subjectId: "e1", record: { id: "e1" } },
     ];
     const findings: AuditFinding[] = [];
-    const sum = await new FnRuleRunner().run([studentRule, engRule], rows, makeCtx(), (f) => {
-      findings.push(f);
-    });
+    const sum = await new FnRuleRunner().run(
+      [studentRule, engRule],
+      rows,
+      makeCtx(),
+      (f) => { findings.push(f); },
+    );
     expect(sum.findingsEmitted).toBe(2);
     expect(findings.map((f) => `${f.ruleId}:${f.entityType}`).sort()).toEqual([
       "E-1:Engagement",
@@ -96,7 +105,11 @@ describe("FnRuleRunner — basic dispatch", () => {
     await new FnRuleRunner().run([universal], rows, makeCtx(), (f) => {
       findings.push(f);
     });
-    expect(findings.map((f) => f.entityType).sort()).toEqual(["Engagement", "Leaver", "Student"]);
+    expect(findings.map((f) => f.entityType).sort()).toEqual([
+      "Engagement",
+      "Leaver",
+      "Student",
+    ]);
   });
 });
 
@@ -180,9 +193,7 @@ describe("FnRuleRunner — input shape compatibility", () => {
     const findings: AuditFinding[] = [];
     await new FnRuleRunner({
       contextProvider: () => ({ studentHusids: new Set(["H1"]) }),
-    }).run([rule], rows, makeCtx(), (f) => {
-      findings.push(f);
-    });
+    }).run([rule], rows, makeCtx(), (f) => { findings.push(f); });
     expect(findings.map((f) => f.subjectId)).toEqual(["e2"]);
   });
 });
@@ -210,9 +221,7 @@ describe("FnRuleRunner — severity normalisation", () => {
       [rule],
       [{ entity: "Student", subjectId: "s1", record: {} }],
       makeCtx(),
-      (f) => {
-        findings.push(f);
-      }
+      (f) => { findings.push(f); },
     );
     expect(findings[0]?.severity).toBe("WARN");
   });
@@ -231,9 +240,7 @@ describe("FnRuleRunner — caps and resilience", () => {
       [rule],
       rows,
       makeCtx(),
-      (f) => {
-        findings.push(f);
-      }
+      (f) => { findings.push(f); },
     );
     expect(findings).toHaveLength(3);
     expect(sum.truncated).toBe(true);
@@ -247,9 +254,12 @@ describe("FnRuleRunner — caps and resilience", () => {
       record: {},
     }));
     const findings: AuditFinding[] = [];
-    const sum = await new FnRuleRunner({ maxFindingsTotal: 4 }).run(rules, rows, makeCtx(), (f) => {
-      findings.push(f);
-    });
+    const sum = await new FnRuleRunner({ maxFindingsTotal: 4 }).run(
+      rules,
+      rows,
+      makeCtx(),
+      (f) => { findings.push(f); },
+    );
     expect(findings.length).toBeLessThanOrEqual(4);
     expect(sum.truncated).toBe(true);
   });
@@ -270,9 +280,7 @@ describe("FnRuleRunner — caps and resilience", () => {
       [throwy],
       [{ entity: "Student", subjectId: "s1", record: {} }],
       makeCtx(),
-      (f) => {
-        findings.push(f);
-      }
+      (f) => { findings.push(f); },
     );
     expect(sum.findingsEmitted).toBe(1);
     expect(findings[0]?.message).toMatch(/kaboom/);
@@ -290,7 +298,7 @@ describe("FnRuleRunner — caps and resilience", () => {
       [bad],
       [{ entity: "Student", subjectId: "s1", record: {} }],
       makeCtx(),
-      () => undefined
+      () => undefined,
     );
     expect(sum.rulesSkipped).toBe(1);
     expect(sum.findingsEmitted).toBe(0);
@@ -305,9 +313,12 @@ describe("FnRuleRunner — caps and resilience", () => {
       yield { entity: "Student", subjectId: "s2", record: { id: "s2" } };
     }
     const findings: AuditFinding[] = [];
-    const sum = await new FnRuleRunner().run([rule], rows(), makeCtx(ctrl.signal), (f) => {
-      findings.push(f);
-    });
+    const sum = await new FnRuleRunner().run(
+      [rule],
+      rows(),
+      makeCtx(ctrl.signal),
+      (f) => { findings.push(f); },
+    );
     expect(sum.rowsProcessed).toBe(1);
     expect(findings).toHaveLength(1);
   });

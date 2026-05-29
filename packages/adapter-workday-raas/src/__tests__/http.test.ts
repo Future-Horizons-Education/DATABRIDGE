@@ -18,7 +18,10 @@ function makeLogger() {
   return { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() };
 }
 
-function jsonRes(body: unknown, init: { status?: number; headers?: Record<string, string> } = {}) {
+function jsonRes(
+  body: unknown,
+  init: { status?: number; headers?: Record<string, string> } = {},
+) {
   const status = init.status ?? 200;
   const headers = new Map(Object.entries(init.headers ?? {}));
   return {
@@ -75,7 +78,8 @@ describe("WorkdayRaasClient", () => {
     let calls = 0;
     const fetchImpl: WorkdayRaasFetchLike = vi.fn(async () => {
       calls++;
-      if (calls === 1) return jsonRes({}, { status: 429, headers: { "retry-after": "0" } });
+      if (calls === 1)
+        return jsonRes({}, { status: 429, headers: { "retry-after": "0" } });
       return jsonRes({ Report_Entry: [{ ok: true }] });
     });
     const client = new WorkdayRaasClient({
@@ -111,7 +115,9 @@ describe("WorkdayRaasClient", () => {
   });
 
   it("throws when retries are exhausted on persistent 5xx", async () => {
-    const fetchImpl: WorkdayRaasFetchLike = vi.fn(async () => jsonRes("dead", { status: 502 }));
+    const fetchImpl: WorkdayRaasFetchLike = vi.fn(async () =>
+      jsonRes("dead", { status: 502 }),
+    );
     const client = new WorkdayRaasClient({
       config: CONFIG,
       password: "p4ss",
@@ -128,7 +134,7 @@ describe("WorkdayRaasClient", () => {
 
   it("throws on 4xx (non-429) without retrying", async () => {
     const fetchImpl: WorkdayRaasFetchLike = vi.fn(async () =>
-      jsonRes("not authorized", { status: 401 })
+      jsonRes("not authorized", { status: 401 }),
     );
     const client = new WorkdayRaasClient({
       config: CONFIG,
@@ -163,7 +169,7 @@ describe("WorkdayRaasClient", () => {
 
   it("paginate yields a single page for a full RaaS payload", async () => {
     const fetchImpl: WorkdayRaasFetchLike = vi.fn(async () =>
-      jsonRes({ Report_Entry: [{ a: 1 }, { a: 2 }, { a: 3 }] })
+      jsonRes({ Report_Entry: [{ a: 1 }, { a: 2 }, { a: 3 }] }),
     );
     const client = new WorkdayRaasClient({
       config: CONFIG,
@@ -187,7 +193,7 @@ describe("WorkdayRaasClient", () => {
     });
     const fetchImpl: WorkdayRaasFetchLike = vi.fn(async (url) => {
       expect(url).toBe(
-        "https://wd5-impl-services1.workday.com/ccx/service/example/customreport2/INT_X?format=json"
+        "https://wd5-impl-services1.workday.com/ccx/service/example/customreport2/INT_X?format=json",
       );
       return jsonRes({ Report_Entry: [] });
     });

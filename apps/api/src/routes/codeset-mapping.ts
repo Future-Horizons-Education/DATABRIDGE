@@ -12,7 +12,11 @@
  */
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { createDefaultRegistry, translateCode, type CodesetMap } from "@databridge/codeset-mapper";
+import {
+  createDefaultRegistry,
+  translateCode,
+  type CodesetMap,
+} from "@databridge/codeset-mapper";
 
 const registry = createDefaultRegistry();
 

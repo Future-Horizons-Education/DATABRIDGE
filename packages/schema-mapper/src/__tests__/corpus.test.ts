@@ -48,7 +48,9 @@ describe("buildFlatIndex", () => {
   it("preserves notes when present", () => {
     const corpus = loadBundledCorpus();
     const index = buildFlatIndex(corpus);
-    const surname = index.find((e) => e.canonical === "surname" && e.system === "banner")!;
+    const surname = index.find(
+      (e) => e.canonical === "surname" && e.system === "banner",
+    )!;
     expect(surname.notes).toMatch(/Upper-case/);
   });
 });

@@ -6,16 +6,9 @@ export function makeTestContext(overrides: Partial<AdapterContext> = {}): Adapte
   return {
     tenantId: "test-tenant",
     connectionId: "test-conn",
-    secrets: {
-      async get() {
-        return "";
-      },
-    },
+    secrets: { async get() { return ""; } },
     logger: {
-      info() {},
-      warn() {},
-      error() {},
-      debug() {},
+      info() {}, warn() {}, error() {}, debug() {},
     },
     signal: controller.signal,
     ...overrides,

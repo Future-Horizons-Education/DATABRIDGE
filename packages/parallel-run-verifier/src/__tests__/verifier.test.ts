@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { verifyCanonical, diffsToCsv, summariseDhp, type CanonicalRecord } from "../index.js";
+import {
+  verifyCanonical,
+  diffsToCsv,
+  summariseDhp,
+  type CanonicalRecord,
+} from "../index.js";
 
 const A: CanonicalRecord[] = [
   { entity: "student", id: "S1", fields: { surname: "Smith", firstName: "Alex", grade: 75 } },
@@ -44,8 +49,12 @@ describe("verifyCanonical", () => {
   });
 
   it("treatBlanksAsEqual collapses null/undefined/empty", () => {
-    const a: CanonicalRecord[] = [{ entity: "x", id: "1", fields: { foo: null, bar: "ok" } }];
-    const b: CanonicalRecord[] = [{ entity: "x", id: "1", fields: { foo: "", bar: "ok" } }];
+    const a: CanonicalRecord[] = [
+      { entity: "x", id: "1", fields: { foo: null, bar: "ok" } },
+    ];
+    const b: CanonicalRecord[] = [
+      { entity: "x", id: "1", fields: { foo: "", bar: "ok" } },
+    ];
     const lax = verifyCanonical(a, b, { treatBlanksAsEqual: true });
     expect(lax.entityScores[0]!.dhp).toBe(1);
     const strict = verifyCanonical(a, b);

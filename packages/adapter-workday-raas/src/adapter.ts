@@ -32,7 +32,10 @@ import type {
 import type { SchemaDescriptor, CodeList, DictionaryEntry } from "@databridge/adapter-spec";
 
 import { WorkdayRaasConfigSchema, type WorkdayRaasConfig } from "./config.js";
-import { WorkdayRaasClient, type WorkdayRaasClientOptions } from "./http.js";
+import {
+  WorkdayRaasClient,
+  type WorkdayRaasClientOptions,
+} from "./http.js";
 import { RAAS_REPORT_NAME, RAAS_REPORT_PK } from "./resource-map.js";
 
 export const SUPPORTED_RESOURCES = [
@@ -55,7 +58,7 @@ export interface WorkdayRaasAdapterOptions {
    * backed by `globalThis.fetch`.
    */
   httpClientFactory?: (
-    args: Pick<WorkdayRaasClientOptions, "config" | "password" | "logger" | "signal">
+    args: Pick<WorkdayRaasClientOptions, "config" | "password" | "logger" | "signal">,
   ) => WorkdayRaasClient;
 }
 
@@ -72,7 +75,9 @@ export class WorkdayRaasAdapter implements SourceAdapter {
   };
 
   private readonly config: WorkdayRaasConfig;
-  private readonly httpClientFactory: NonNullable<WorkdayRaasAdapterOptions["httpClientFactory"]>;
+  private readonly httpClientFactory: NonNullable<
+    WorkdayRaasAdapterOptions["httpClientFactory"]
+  >;
 
   constructor(rawConfig: unknown, options: WorkdayRaasAdapterOptions = {}) {
     this.config = WorkdayRaasConfigSchema.parse(rawConfig);
@@ -189,7 +194,10 @@ export class WorkdayRaasAdapter implements SourceAdapter {
     return rows.slice(0, Math.max(0, args.limit)).map(toSampledRow);
   }
 
-  async *streamRows(ctx: AdapterContext, args: StreamRowsArgs): AsyncIterable<StreamRowsPage> {
+  async *streamRows(
+    ctx: AdapterContext,
+    args: StreamRowsArgs,
+  ): AsyncIterable<StreamRowsPage> {
     ctx.logger.debug("workday-raas: streamRows", { resource: args.resource });
     this.requireSupported(args.resource);
 
@@ -219,7 +227,10 @@ export class WorkdayRaasAdapter implements SourceAdapter {
     return [];
   }
 
-  async getRecordById(ctx: AdapterContext, args: GetRecordByIdArgs): Promise<SampledRow | null> {
+  async getRecordById(
+    ctx: AdapterContext,
+    args: GetRecordByIdArgs,
+  ): Promise<SampledRow | null> {
     ctx.logger.debug("workday-raas: getRecordById", {
       resource: args.resource,
       id: args.id,

@@ -21,7 +21,10 @@ const RATIONALE_RE = /^[A-Za-z0-9 .,;:'"()/\-_+@%]*$/;
 export const ExplanationZ = z.object({
   chosen: z.string().min(1).max(120),
   /** Up to 3 sentences, each ≤ 160 chars. */
-  rationale: z.array(z.string().min(1).max(160).regex(RATIONALE_RE)).min(1).max(3),
+  rationale: z
+    .array(z.string().min(1).max(160).regex(RATIONALE_RE))
+    .min(1)
+    .max(3),
   /** Model's stated confidence, clipped to [0, 1] downstream. */
   confidence: z.number().min(0).max(1),
 });
@@ -71,7 +74,7 @@ const CALLER = "schema-mapper-llm/explainer";
 export async function explainSuggestion(
   input: ExplainSuggestionInput,
   provider: LlmProvider,
-  llmOptions?: LlmCallOptions
+  llmOptions?: LlmCallOptions,
 ): Promise<ExplainSuggestionResult> {
   const prompt = buildExplainerPrompt(input);
   const { output, provenance } = await provider.complete<Explanation>(
@@ -79,14 +82,16 @@ export async function explainSuggestion(
     EXPLANATION_SCHEMA,
     (raw) => ExplanationZ.parse(raw),
     CALLER,
-    llmOptions
+    llmOptions,
   );
   return { explanation: output, provenance };
 }
 
 export function buildExplainerPrompt(input: ExplainSuggestionInput): string {
   const candidateList = input.candidates
-    .map((c) => `- ${c.entity}.${c.canonical} (score ${c.score.toFixed(2)}): ${c.rationale}`)
+    .map(
+      (c) => `- ${c.entity}.${c.canonical} (score ${c.score.toFixed(2)}): ${c.rationale}`,
+    )
     .join("\n");
   return [
     "You are the DATABRIDGE schema-mapping tie-breaker. The deterministic",

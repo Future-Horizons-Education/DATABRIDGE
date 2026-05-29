@@ -251,7 +251,7 @@ export class MigrationRunner {
    */
   private transformRow(
     src: SourceRow,
-    opQueue: MigrationRunReport["operationalQueue"]
+    opQueue: MigrationRunReport["operationalQueue"],
   ): TransformedRow {
     const { policy } = this.opts;
     const provenance: ProvenanceEntry[] = [];
@@ -292,7 +292,9 @@ export class MigrationRunner {
       case "sgbstdn":
       case "scj":
       case "enrolment": {
-        const studentId = String(payload["pidm"] ?? payload["PIDM"] ?? payload["student_id"] ?? "");
+        const studentId = String(
+          payload["pidm"] ?? payload["PIDM"] ?? payload["student_id"] ?? "",
+        );
         const ayr = (payload["ayr"] as string) ?? null;
         const sourceAttempt = payload["scj_code"] as string | number | null | undefined;
         const a = this.scj.allocate({
@@ -310,7 +312,7 @@ export class MigrationRunner {
             this.opts.codesetRegistry,
             policy.feeStatus,
             String(resd),
-            policy.tenantId
+            policy.tenantId,
           );
           if (f.value !== null) payload["fee_status"] = f.value;
           provenance.push(f.provenance);
@@ -319,10 +321,7 @@ export class MigrationRunner {
         // classification gap — when classification is missing for a finalist
         const isFinalist = payload["finalist"] === true || payload["finalist"] === "Y";
         const classification = payload["classification"];
-        if (
-          isFinalist &&
-          (classification === null || classification === undefined || classification === "")
-        ) {
+        if (isFinalist && (classification === null || classification === undefined || classification === "")) {
           this.applyClassificationGap(payload, src, provenance, opQueue);
         }
         break;
@@ -336,7 +335,7 @@ export class MigrationRunner {
             this.opts.codesetRegistry,
             policy.gradeScheme,
             String(grade),
-            policy.tenantId
+            policy.tenantId,
           );
           if (g.value !== null) payload["numeric_grade"] = g.value;
           provenance.push(g.provenance);
@@ -377,7 +376,7 @@ export class MigrationRunner {
     payload: SampledRow,
     src: SourceRow,
     provenance: ProvenanceEntry[],
-    opQueue: MigrationRunReport["operationalQueue"]
+    opQueue: MigrationRunReport["operationalQueue"],
   ): void {
     const policy = this.opts.policy.classificationGap;
     if (policy.strategy === "skip") {

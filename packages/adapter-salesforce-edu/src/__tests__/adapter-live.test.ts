@@ -26,11 +26,7 @@ function adapterWith(queue: Parameters<typeof buildFetch>[0]): SalesforceEduAdap
 describe("SalesforceEduAdapter — live path with injected http", () => {
   it("healthCheck returns healthy when token endpoint responds", async () => {
     const ad = adapterWith([
-      jsonResp(200, {
-        access_token: "t",
-        instance_url: "https://acme.my.salesforce.com",
-        expires_in: 3600,
-      }),
+      jsonResp(200, { access_token: "t", instance_url: "https://acme.my.salesforce.com", expires_in: 3600 }),
     ]);
     const r = await ad.healthCheck(makeCtx());
     expect(r.healthy).toBe(true);
@@ -47,17 +43,11 @@ describe("SalesforceEduAdapter — live path with injected http", () => {
 
   it("sampleTable executes a SOQL against the configured SObject", async () => {
     const ad = adapterWith([
-      jsonResp(200, {
-        access_token: "t",
-        instance_url: "https://acme.my.salesforce.com",
-        expires_in: 3600,
-      }),
+      jsonResp(200, { access_token: "t", instance_url: "https://acme.my.salesforce.com", expires_in: 3600 }),
       jsonResp(200, {
         totalSize: 1,
         done: true,
-        records: [
-          { Id: "001a", attributes: { type: "Contact" }, FirstName: "Ada", LastName: "Lovelace" },
-        ],
+        records: [{ Id: "001a", attributes: { type: "Contact" }, FirstName: "Ada", LastName: "Lovelace" }],
       }),
     ]);
     const rows = await ad.sampleTable(makeCtx(), { resource: "Contact", limit: 5 });
@@ -68,11 +58,7 @@ describe("SalesforceEduAdapter — live path with injected http", () => {
 
   it("streamRows yields pages and reports totalRows from totalSize", async () => {
     const ad = adapterWith([
-      jsonResp(200, {
-        access_token: "t",
-        instance_url: "https://acme.my.salesforce.com",
-        expires_in: 3600,
-      }),
+      jsonResp(200, { access_token: "t", instance_url: "https://acme.my.salesforce.com", expires_in: 3600 }),
       jsonResp(200, {
         totalSize: 2,
         done: true,
@@ -90,11 +76,7 @@ describe("SalesforceEduAdapter — live path with injected http", () => {
 
   it("getRecordById returns the row payload", async () => {
     const ad = adapterWith([
-      jsonResp(200, {
-        access_token: "t",
-        instance_url: "https://acme.my.salesforce.com",
-        expires_in: 3600,
-      }),
+      jsonResp(200, { access_token: "t", instance_url: "https://acme.my.salesforce.com", expires_in: 3600 }),
       jsonResp(200, { Id: "001a", FirstName: "Ada" }),
     ]);
     const row = await ad.getRecordById(makeCtx(), { resource: "Contact", id: "001a" });
@@ -103,11 +85,7 @@ describe("SalesforceEduAdapter — live path with injected http", () => {
 
   it("getCodeLists surfaces picklists from describe", async () => {
     const ad = adapterWith([
-      jsonResp(200, {
-        access_token: "t",
-        instance_url: "https://acme.my.salesforce.com",
-        expires_in: 3600,
-      }),
+      jsonResp(200, { access_token: "t", instance_url: "https://acme.my.salesforce.com", expires_in: 3600 }),
       ...Array.from({ length: 6 }, () =>
         jsonResp(200, {
           name: "Contact",
@@ -122,7 +100,7 @@ describe("SalesforceEduAdapter — live path with injected http", () => {
               ],
             },
           ],
-        })
+        }),
       ),
     ]);
     const codeLists = await ad.getCodeLists(makeCtx());
@@ -132,11 +110,7 @@ describe("SalesforceEduAdapter — live path with injected http", () => {
 
   it("getDictionary yields entries from describe payloads", async () => {
     const ad = adapterWith([
-      jsonResp(200, {
-        access_token: "t",
-        instance_url: "https://acme.my.salesforce.com",
-        expires_in: 3600,
-      }),
+      jsonResp(200, { access_token: "t", instance_url: "https://acme.my.salesforce.com", expires_in: 3600 }),
       ...Array.from({ length: 6 }, () =>
         jsonResp(200, {
           name: "Contact",
@@ -144,7 +118,7 @@ describe("SalesforceEduAdapter — live path with injected http", () => {
             { name: "Id", type: "id", nillable: false },
             { name: "Email", type: "email", nillable: true },
           ],
-        })
+        }),
       ),
     ]);
     const dict = await ad.getDictionary(makeCtx());

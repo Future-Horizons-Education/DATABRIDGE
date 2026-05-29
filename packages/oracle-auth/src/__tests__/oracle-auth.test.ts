@@ -10,11 +10,7 @@ function makeCtx(secrets: Record<string, string> = {}): AdapterContext {
   return {
     tenantId: "t",
     connectionId: "c",
-    secrets: {
-      async get(k: string) {
-        return secrets[k] ?? "";
-      },
-    },
+    secrets: { async get(k: string) { return secrets[k] ?? ""; } },
     logger: { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} },
     signal: new AbortController().signal,
   };
@@ -49,7 +45,7 @@ describe("resolveOracleCredential", () => {
     const cred = await resolveOracleCredential(
       makeCtx(),
       { mode: "iam", region: "uk-london-1" },
-      { tokenProvider: async () => "oci-token" }
+      { tokenProvider: async () => "oci-token" },
     );
     expect(cred?.mode).toBe("iam");
     expect(cred?.token).toBe("oci-token");
@@ -62,11 +58,7 @@ describe("resolveOracleCredential", () => {
     const cred = await resolveOracleCredential(
       ctx,
       { mode: "instance-principal" },
-      {
-        tokenProvider: async () => {
-          throw new Error("nope");
-        },
-      }
+      { tokenProvider: async () => { throw new Error("nope"); } },
     );
     expect(cred).toBeUndefined();
     expect(warn).toHaveBeenCalledOnce();
@@ -76,7 +68,7 @@ describe("resolveOracleCredential", () => {
     const cred = await resolveOracleCredential(
       makeCtx(),
       { mode: "iam" },
-      { tokenProvider: async () => "tok" }
+      { tokenProvider: async () => "tok" },
     );
     expect(cred && "region" in cred).toBe(false);
     expect(cred && "connectString" in cred).toBe(false);
@@ -84,7 +76,7 @@ describe("resolveOracleCredential", () => {
 
   it("passes config + context through to the provider", async () => {
     const provider = vi.fn<Parameters<OracleTokenProvider>, ReturnType<OracleTokenProvider>>(
-      async () => "tok"
+      async () => "tok",
     );
     const cfg: OracleAuthConfig = { mode: "wallet", secretKey: "k" };
     const ctx = makeCtx({ k: "v" });

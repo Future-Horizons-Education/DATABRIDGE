@@ -6,7 +6,10 @@
  * sanitises, renders to text + markdown.
  */
 import type { AuditFinding, RuleSeverity } from "@databridge/rule-core";
-import { type LlmProvider, type LlmCallOptions } from "@databridge/rule-compiler-llm";
+import {
+  type LlmProvider,
+  type LlmCallOptions,
+} from "@databridge/rule-compiler-llm";
 import type { LlmCallProvenance } from "@databridge/provenance-core";
 import {
   NARRATIVE_SCHEMA,
@@ -48,7 +51,7 @@ const DEFAULT_EMPTY: NarrativeSlots = {
 
 export async function narrate(
   findings: readonly AuditFinding[],
-  opts: NarrateOptions
+  opts: NarrateOptions,
 ): Promise<NarrateResult> {
   if (findings.length === 0) {
     const empty = opts.emptyNarrative ?? DEFAULT_EMPTY;
@@ -65,7 +68,7 @@ export async function narrate(
     NARRATIVE_SCHEMA,
     (raw) => NarrativeSlotsZ.parse(raw),
     CALLER,
-    opts.llmOptions
+    opts.llmOptions,
   );
   const slots = sanitiseSlots(output);
   return {

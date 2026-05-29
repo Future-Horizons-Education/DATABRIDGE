@@ -16,10 +16,7 @@
       "default": "./dist/corpus.js"
     }
   },
-  "files": [
-    "dist",
-    "corpus"
-  ],
+  "files": ["dist", "corpus"],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
@@ -32,9 +29,7 @@
     "pg": "^8.11.0"
   },
   "peerDependenciesMeta": {
-    "pg": {
-      "optional": true
-    }
+    "pg": { "optional": true }
   },
   "devDependencies": {
     "typescript": "^5.4.5",

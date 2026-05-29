@@ -68,7 +68,9 @@ export function stableStringify(v: unknown): string {
   }
   const obj = v as Record<string, unknown>;
   const keys = Object.keys(obj).sort();
-  return `{${keys.map((k) => `${JSON.stringify(k)}:${stableStringify(obj[k])}`).join(",")}}`;
+  return `{${keys
+    .map((k) => `${JSON.stringify(k)}:${stableStringify(obj[k])}`)
+    .join(",")}}`;
 }
 
 /**
@@ -92,7 +94,9 @@ export interface BuildLlmCallProvenanceInput {
   callId?: string;
 }
 
-export function buildLlmCallProvenance(input: BuildLlmCallProvenanceInput): LlmCallProvenance {
+export function buildLlmCallProvenance(
+  input: BuildLlmCallProvenanceInput,
+): LlmCallProvenance {
   const now = (input.now ?? (() => new Date()))();
   const rec: LlmCallProvenance = {
     callId: input.callId ?? randomUUID(),
@@ -173,7 +177,7 @@ export class CostCeiling {
         `cost ceiling exceeded: would spend $${(this.spent + costUsd).toFixed(4)} of $${this.ceilingUsd.toFixed(4)}`,
         this.ceilingUsd,
         this.spent,
-        costUsd
+        costUsd,
       );
     }
     this.spent += costUsd;
@@ -187,7 +191,7 @@ export class CostCeilingExceededError extends Error {
     message: string,
     readonly ceilingUsd: number,
     readonly spentUsd: number,
-    readonly attemptedUsd: number
+    readonly attemptedUsd: number,
   ) {
     super(message);
     this.name = "CostCeilingExceededError";

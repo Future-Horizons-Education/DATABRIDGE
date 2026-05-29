@@ -12,7 +12,10 @@ export {
   type LoadPlanEntry,
 } from "./orchestrator.js";
 export { SitsLoadPlanWriter } from "./sits-load-plan-writer.js";
-export { BannerToSitsConfigSchema, type BannerToSitsConfig } from "./config.js";
+export {
+  BannerToSitsConfigSchema,
+  type BannerToSitsConfig,
+} from "./config.js";
 export {
   BANNER_TO_SITS_PREFLIGHT_POLICY,
   evaluatePreFlightPolicy,

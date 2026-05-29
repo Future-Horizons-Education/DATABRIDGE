@@ -6,7 +6,10 @@
  * {@link BufferedTargetTransport}; {@link renderFabricLoadPlan} emits a
  * OneLake load-plan JSON (one Delta table per entity). Stub by default.
  */
-import type { AdapterContext, TargetAdapterCapabilities } from "@databridge/adapter-spec";
+import type {
+  AdapterContext,
+  TargetAdapterCapabilities,
+} from "@databridge/adapter-spec";
 import {
   BufferedTargetTransport,
   ConfigurableTargetAdapter,
@@ -46,7 +49,7 @@ const FABRIC_CAPABILITIES: TargetAdapterCapabilities = {
 export class MicrosoftFabricTargetAdapter extends ConfigurableTargetAdapter {
   constructor(
     transport: TargetTransport,
-    opts: { requiredFieldsByEntity?: Record<string, readonly string[]> } = {}
+    opts: { requiredFieldsByEntity?: Record<string, readonly string[]> } = {},
   ) {
     const spec: ConfigurableTargetAdapterSpec = {
       id: "azure-fabric",
@@ -63,7 +66,7 @@ export class MicrosoftFabricTargetAdapter extends ConfigurableTargetAdapter {
 /** Render a OneLake load plan (one Delta table per entity). */
 export function renderFabricLoadPlan(
   cfg: MicrosoftFabricConfig,
-  transport: BufferedTargetTransport
+  transport: BufferedTargetTransport,
 ): CloudArtifact {
   const plan = {
     workspace: cfg.workspace,
@@ -94,19 +97,21 @@ export interface BuildMicrosoftFabricOptions {
 export async function buildMicrosoftFabricTarget(
   ctx: AdapterContext,
   cfg: MicrosoftFabricConfig,
-  opts: BuildMicrosoftFabricOptions = {}
+  opts: BuildMicrosoftFabricOptions = {},
 ): Promise<CloudTargetBundle> {
   const credential = await resolveAzureCredential(
     ctx,
     cfg.auth,
-    opts.tokenProvider ? { tokenProvider: opts.tokenProvider } : {}
+    opts.tokenProvider ? { tokenProvider: opts.tokenProvider } : {},
   );
   const transport = new BufferedTargetTransport(
-    opts.sink ? { idPrefix: "fabric", sink: opts.sink } : { idPrefix: "fabric" }
+    opts.sink ? { idPrefix: "fabric", sink: opts.sink } : { idPrefix: "fabric" },
   );
   const adapter = new MicrosoftFabricTargetAdapter(
     transport,
-    opts.requiredFieldsByEntity ? { requiredFieldsByEntity: opts.requiredFieldsByEntity } : {}
+    opts.requiredFieldsByEntity
+      ? { requiredFieldsByEntity: opts.requiredFieldsByEntity }
+      : {},
   );
   return {
     adapter,

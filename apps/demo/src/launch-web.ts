@@ -16,7 +16,7 @@ export interface LaunchWebDeps {
   spawn: (
     command: string,
     args: readonly string[],
-    options: { detached: boolean; stdio: "ignore" | "inherit" }
+    options: { detached: boolean; stdio: "ignore" | "inherit" },
   ) => SpawnedProcessLike;
   log: (message: string) => void;
 }
@@ -34,10 +34,13 @@ export interface LaunchWebResult {
   pid?: number;
 }
 
-export function maybeLaunchWeb(opts: LaunchWebOptions, deps: LaunchWebDeps): LaunchWebResult {
+export function maybeLaunchWeb(
+  opts: LaunchWebOptions,
+  deps: LaunchWebDeps,
+): LaunchWebResult {
   if (!opts.launchWeb) {
     deps.log(
-      "web auto-launch disabled — pass --launch-web to start apps/web and open the query bar"
+      "web auto-launch disabled — pass --launch-web to start apps/web and open the query bar",
     );
     return { launched: false };
   }

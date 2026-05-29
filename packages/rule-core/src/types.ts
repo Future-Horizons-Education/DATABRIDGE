@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { CodeList } from "@databridge/adapter-spec";
 import type { LlmAdapter } from "@databridge/platform";
 
@@ -19,19 +20,8 @@ export type RuleSeverity = "CRITICAL" | "ERROR" | "WARN" | "INFO";
  *    tables (audit-pack-banner-native, BANNER_DATA_STRUCTURES §17).
  */
 export type RuleFamily =
-  | "F01"
-  | "F02"
-  | "F03"
-  | "F04"
-  | "F05"
-  | "F06"
-  | "F07"
-  | "F08"
-  | "F09"
-  | "F10"
-  | "F11"
-  | "F12"
-  | "F13"
+  | "F01" | "F02" | "F03" | "F04" | "F05" | "F06"
+  | "F07" | "F08" | "F09" | "F10" | "F11" | "F12" | "F13"
   | "SITS-INTEGRITY"
   | "BANNER-INTEGRITY"
   | "WORKDAY-INTEGRITY"
@@ -43,7 +33,7 @@ export type RuleFamily =
  * Base rule definition — all rule types extend this.
  */
 export interface AuditRuleBase {
-  id: string; // e.g. "F01-01"
+  id: string;              // e.g. "F01-01"
   family: RuleFamily;
   name: string;
   description: string;

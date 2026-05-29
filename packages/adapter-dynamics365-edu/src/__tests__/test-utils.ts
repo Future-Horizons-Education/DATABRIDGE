@@ -34,11 +34,7 @@ export interface MockResponse {
   headers?: Record<string, string>;
 }
 
-export function jsonResp(
-  status: number,
-  body: unknown,
-  headers: Record<string, string> = {}
-): MockResponse {
+export function jsonResp(status: number, body: unknown, headers: Record<string, string> = {}): MockResponse {
   return {
     ok: status >= 200 && status < 300,
     status,
@@ -50,7 +46,7 @@ export function jsonResp(
 
 export function buildFetch(queue: MockResponse[]): (
   url: string,
-  init?: { method?: string; headers?: Record<string, string>; body?: string; signal?: AbortSignal }
+  init?: { method?: string; headers?: Record<string, string>; body?: string; signal?: AbortSignal },
 ) => Promise<{
   ok: boolean;
   status: number;
@@ -67,7 +63,7 @@ export function buildFetch(queue: MockResponse[]): (
       status: resp.status,
       statusText: resp.statusText,
       headers: {
-        get: (name: string) => resp.headers?.[name.toLowerCase()] ?? null,
+        get: (name: string) => (resp.headers?.[name.toLowerCase()] ?? null),
       },
       async text() {
         return resp.body;

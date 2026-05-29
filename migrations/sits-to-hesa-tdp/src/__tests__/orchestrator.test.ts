@@ -28,7 +28,10 @@ function fakeAdapter(id: string, rowsPerCall: number): SourceAdapter {
     async sampleTable() {
       return [];
     },
-    async *streamRows(_ctx: AdapterContext, _args: StreamRowsArgs): AsyncIterable<StreamRowsPage> {
+    async *streamRows(
+      _ctx: AdapterContext,
+      _args: StreamRowsArgs,
+    ): AsyncIterable<StreamRowsPage> {
       yield {
         rows: Array.from({ length: rowsPerCall }, (_, i) => ({ id: `r${i}` })),
         totalRows: rowsPerCall,
@@ -73,7 +76,7 @@ describe("SitsToHesaTdpConfigSchema", () => {
 
   it("rejects an invalid collection year format", () => {
     expect(() =>
-      SitsToHesaTdpConfigSchema.parse({ source: "sits-api", collectionYear: "2024" })
+      SitsToHesaTdpConfigSchema.parse({ source: "sits-api", collectionYear: "2024" }),
     ).toThrow();
   });
 });
@@ -84,15 +87,15 @@ describe("SitsToHesaTdpOrchestrator", () => {
       () =>
         new SitsToHesaTdpOrchestrator(
           { source: "sits-api", collectionYear: "2024/25" },
-          fakeAdapter("banner-oracle", 0)
-        )
+          fakeAdapter("banner-oracle", 0),
+        ),
     ).toThrow(/SITS source adapter/);
   });
 
   it("runs all supported entities in dry-run mode by default", async () => {
     const orchestrator = new SitsToHesaTdpOrchestrator(
       { source: "sits-api", collectionYear: "2024/25" },
-      fakeAdapter("sits-api", 3)
+      fakeAdapter("sits-api", 3),
     );
     const result = await orchestrator.run(makeCtx());
     expect(result.dryRun).toBe(true);
@@ -108,7 +111,7 @@ describe("SitsToHesaTdpOrchestrator", () => {
         collectionYear: "2024/25",
         entities: ["Student"],
       },
-      fakeAdapter("sits-api", 2)
+      fakeAdapter("sits-api", 2),
     );
     const result = await orchestrator.run(makeCtx());
     expect(result.outcomes.length).toBe(1);

@@ -6,7 +6,10 @@
  * parameter file (one MAP per entity) for CDC into ADW or on-prem Oracle.
  * Stub by default — no real GoldenGate instance is touched.
  */
-import type { AdapterContext, TargetAdapterCapabilities } from "@databridge/adapter-spec";
+import type {
+  AdapterContext,
+  TargetAdapterCapabilities,
+} from "@databridge/adapter-spec";
 import {
   BufferedTargetTransport,
   ConfigurableTargetAdapter,
@@ -42,7 +45,7 @@ const GG_CAPABILITIES: TargetAdapterCapabilities = {
 export class OracleGoldenGateTargetAdapter extends ConfigurableTargetAdapter {
   constructor(
     transport: TargetTransport,
-    opts: { requiredFieldsByEntity?: Record<string, readonly string[]> } = {}
+    opts: { requiredFieldsByEntity?: Record<string, readonly string[]> } = {},
   ) {
     const spec: ConfigurableTargetAdapterSpec = {
       id: "oracle-goldengate",
@@ -59,7 +62,7 @@ export class OracleGoldenGateTargetAdapter extends ConfigurableTargetAdapter {
 /** Render a GoldenGate replicat parameter file (.prm). */
 export function renderGoldenGateParams(
   cfg: OracleGoldenGateConfig,
-  transport: BufferedTargetTransport
+  transport: BufferedTargetTransport,
 ): CloudArtifact {
   const replicat = cfg.replicatName ?? "DBRIDGE";
   const targetSchema = cfg.targetSchema ?? "ADW";
@@ -93,19 +96,21 @@ export interface BuildOracleGoldenGateOptions {
 export async function buildOracleGoldenGateTarget(
   ctx: AdapterContext,
   cfg: OracleGoldenGateConfig,
-  opts: BuildOracleGoldenGateOptions = {}
+  opts: BuildOracleGoldenGateOptions = {},
 ): Promise<CloudTargetBundle> {
   const credential = await resolveOracleCredential(
     ctx,
     cfg.auth,
-    opts.tokenProvider ? { tokenProvider: opts.tokenProvider } : {}
+    opts.tokenProvider ? { tokenProvider: opts.tokenProvider } : {},
   );
   const transport = new BufferedTargetTransport(
-    opts.sink ? { idPrefix: "gg", sink: opts.sink } : { idPrefix: "gg" }
+    opts.sink ? { idPrefix: "gg", sink: opts.sink } : { idPrefix: "gg" },
   );
   const adapter = new OracleGoldenGateTargetAdapter(
     transport,
-    opts.requiredFieldsByEntity ? { requiredFieldsByEntity: opts.requiredFieldsByEntity } : {}
+    opts.requiredFieldsByEntity
+      ? { requiredFieldsByEntity: opts.requiredFieldsByEntity }
+      : {},
   );
   return {
     adapter,

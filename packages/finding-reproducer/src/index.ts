@@ -61,14 +61,11 @@ export interface TargetShapeProvider {
     entityType: string;
     subjectId: string;
     canonical: Record<string, unknown> | undefined;
-  }): Promise<
-    | {
-        targetSystem: string;
-        table: string;
-        payload: Record<string, unknown>;
-      }
-    | undefined
-  >;
+  }): Promise<{
+    targetSystem: string;
+    table: string;
+    payload: Record<string, unknown>;
+  } | undefined>;
 }
 
 // ---------------------------------------------------------------------------
@@ -135,14 +132,18 @@ export class FindingReproducer {
     };
   }
 
-  private async resolveNative(finding: AuditFinding): Promise<ReproductionBundle["nativeRow"]> {
+  private async resolveNative(
+    finding: AuditFinding,
+  ): Promise<ReproductionBundle["nativeRow"]> {
     if (!finding.sourceSystem) {
       return { available: false, reason: "finding has no sourceSystem" };
     }
     if (!finding.nativeKeys || Object.keys(finding.nativeKeys).length === 0) {
       return { available: false, reason: "finding has no nativeKeys" };
     }
-    const provider = this.nativeProviders.find((p) => p.handles(finding.sourceSystem!));
+    const provider = this.nativeProviders.find((p) =>
+      p.handles(finding.sourceSystem!),
+    );
     if (!provider) {
       return {
         available: false,
@@ -173,8 +174,12 @@ export class FindingReproducer {
     }
   }
 
-  private async resolveCanonical(finding: AuditFinding): Promise<ReproductionBundle["canonical"]> {
-    const provider = this.canonicalProviders.find((p) => p.handles(finding.entityType));
+  private async resolveCanonical(
+    finding: AuditFinding,
+  ): Promise<ReproductionBundle["canonical"]> {
+    const provider = this.canonicalProviders.find((p) =>
+      p.handles(finding.entityType),
+    );
     if (!provider) {
       return {
         available: false,
@@ -211,8 +216,12 @@ export class FindingReproducer {
     }
   }
 
-  private async resolveTarget(finding: AuditFinding): Promise<ReproductionBundle["target"]> {
-    const provider = this.targetProviders.find((p) => p.handles(finding.entityType));
+  private async resolveTarget(
+    finding: AuditFinding,
+  ): Promise<ReproductionBundle["target"]> {
+    const provider = this.targetProviders.find((p) =>
+      p.handles(finding.entityType),
+    );
     if (!provider) {
       return {
         available: false,
@@ -253,7 +262,9 @@ export class FindingReproducer {
 // Predicate derivation
 // ---------------------------------------------------------------------------
 
-export function derivePredicate(finding: AuditFinding): ReproductionBundle["predicate"] {
+export function derivePredicate(
+  finding: AuditFinding,
+): ReproductionBundle["predicate"] {
   if (!finding.ruleProvenance) {
     return {
       kind: "unknown",
@@ -297,9 +308,7 @@ function escapeRegex(s: string): string {
 export function bundleToMd(b: ReproductionBundle): string {
   const lines: string[] = [];
   lines.push(`### Finding ${b.finding.id} — ${b.finding.ruleName}`);
-  lines.push(
-    `_severity_ \`${b.finding.severity}\` · _entity_ \`${b.finding.entityType}\` · _subject_ \`${b.finding.subjectId}\``
-  );
+  lines.push(`_severity_ \`${b.finding.severity}\` · _entity_ \`${b.finding.entityType}\` · _subject_ \`${b.finding.subjectId}\``);
   lines.push("");
   lines.push("**Predicate**");
   lines.push(`\`\`\`${b.predicate.kind === "sql" ? "sql" : ""}`);

@@ -14,7 +14,7 @@ describe("maybeLaunchWeb", () => {
     const { deps, logs, spawn } = fakeDeps();
     const r = maybeLaunchWeb(
       { launchWeb: false, queryBarUrl: "http://localhost:3000/query" },
-      deps
+      deps,
     );
     expect(r.launched).toBe(false);
     expect(spawn).not.toHaveBeenCalled();
@@ -23,23 +23,31 @@ describe("maybeLaunchWeb", () => {
 
   it("spawns the web dev server when enabled", () => {
     const { deps, spawn } = fakeDeps();
-    const r = maybeLaunchWeb({ launchWeb: true, queryBarUrl: "http://localhost:3000/query" }, deps);
+    const r = maybeLaunchWeb(
+      { launchWeb: true, queryBarUrl: "http://localhost:3000/query" },
+      deps,
+    );
     expect(r.launched).toBe(true);
     expect(r.url).toBe("http://localhost:3000/query");
     expect(r.pid).toBe(4242);
-    expect(spawn).toHaveBeenCalledWith("pnpm", ["--filter", "@databridge/web", "dev"], {
-      detached: true,
-      stdio: "ignore",
-    });
+    expect(spawn).toHaveBeenCalledWith(
+      "pnpm",
+      ["--filter", "@databridge/web", "dev"],
+      { detached: true, stdio: "ignore" },
+    );
   });
 
   it("honours a custom web filter", () => {
     const { deps, spawn } = fakeDeps();
-    maybeLaunchWeb({ launchWeb: true, queryBarUrl: "u", webFilter: "@x/web" }, deps);
-    expect(spawn).toHaveBeenCalledWith("pnpm", ["--filter", "@x/web", "dev"], {
-      detached: true,
-      stdio: "ignore",
-    });
+    maybeLaunchWeb(
+      { launchWeb: true, queryBarUrl: "u", webFilter: "@x/web" },
+      deps,
+    );
+    expect(spawn).toHaveBeenCalledWith(
+      "pnpm",
+      ["--filter", "@x/web", "dev"],
+      { detached: true, stdio: "ignore" },
+    );
   });
 });
 

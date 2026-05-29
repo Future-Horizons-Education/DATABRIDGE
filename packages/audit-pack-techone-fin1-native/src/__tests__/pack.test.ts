@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { TECHONE_FIN1_NATIVE_RULES, TECHONE_FIN1_NATIVE_AUDIT_PACK } from "../index.js";
+import {
+  TECHONE_FIN1_NATIVE_RULES,
+  TECHONE_FIN1_NATIVE_AUDIT_PACK,
+} from "../index.js";
 
 describe("@databridge/audit-pack-techone-fin1-native", () => {
   it("ships exactly 13 rules (TECHONE_DATA_STRUCTURES §19)", () => {

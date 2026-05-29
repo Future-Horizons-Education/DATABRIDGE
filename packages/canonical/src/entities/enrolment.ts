@@ -1,5 +1,5 @@
-import { z } from "zod";
-import { ProvenanceFieldsZ } from "./provenance.js";
+import { z } from 'zod';
+import { ProvenanceFieldsZ } from './provenance.js';
 
 /**
  * ModuleEnrolment — one student registered on one module instance.
@@ -17,10 +17,7 @@ export const ModuleEnrolmentZ = z
     /** Source credit-unit declaration: "credit-hour" | "cats" | "ects" | "other". */
     creditUnit: z.string().optional(),
     /** Registration date (YYYY-MM-DD). */
-    registeredAt: z
-      .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/)
-      .optional(),
+    registeredAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
     /** Grading mode (Banner GMOD_CODE). */
     gradingMode: z.string().optional(),
     attributes: z.record(z.unknown()).optional(),
@@ -45,10 +42,7 @@ export const ModuleResultZ = z
     /** Credits awarded (may differ from attempted on fail). */
     creditsAwarded: z.number().optional(),
     /** When the grade was finalised (YYYY-MM-DD). */
-    gradedDate: z
-      .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/)
-      .optional(),
+    gradedDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
     /** Attempt / retake sequence — 1 = first sit, 2 = first resit, etc. */
     attemptNumber: z.number().int().min(1).optional(),
     attributes: z.record(z.unknown()).optional(),
@@ -78,10 +72,7 @@ export const AssessmentResultZ = z
     pass: z.boolean().optional(),
     /** TRUE if this row is a reassessment (resit) record. */
     isReassessment: z.boolean().optional(),
-    gradedDate: z
-      .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/)
-      .optional(),
+    gradedDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
     attributes: z.record(z.unknown()).optional(),
   })
   .merge(ProvenanceFieldsZ);

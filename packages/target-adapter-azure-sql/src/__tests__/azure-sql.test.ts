@@ -1,16 +1,20 @@
 import { describe, it, expect, vi } from "vitest";
-import type { AdapterContext, SampledRow, TargetAdapter } from "@databridge/adapter-spec";
-import { buildAzureSqlTarget, renderAzureSqlLoad, type AzureSqlConfig } from "../index.js";
+import type {
+  AdapterContext,
+  SampledRow,
+  TargetAdapter,
+} from "@databridge/adapter-spec";
+import {
+  buildAzureSqlTarget,
+  renderAzureSqlLoad,
+  type AzureSqlConfig,
+} from "../index.js";
 
 function makeCtx(secrets: Record<string, string> = {}): AdapterContext {
   return {
     tenantId: "t",
     connectionId: "c",
-    secrets: {
-      async get(k: string) {
-        return secrets[k] ?? "";
-      },
-    },
+    secrets: { async get(k: string) { return secrets[k] ?? ""; } },
     logger: { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} },
     signal: new AbortController().signal,
   };
@@ -21,7 +25,7 @@ async function commitEntity(
   ctx: AdapterContext,
   entity: string,
   rows: SampledRow[],
-  dryRun = false
+  dryRun = false,
 ) {
   await adapter.validate(ctx, { entity, rows });
   const staged = await adapter.stage(ctx, {
@@ -65,11 +69,7 @@ describe("AzureSqlTargetAdapter", () => {
   });
 
   it("renders a MERGE when merge keys are configured", async () => {
-    const cfg: AzureSqlConfig = {
-      ...baseCfg,
-      mergeKeysByEntity: { stu: ["stu_code"] },
-      schema: "stg",
-    };
+    const cfg: AzureSqlConfig = { ...baseCfg, mergeKeysByEntity: { stu: ["stu_code"] }, schema: "stg" };
     const { adapter, transport } = await buildAzureSqlTarget(makeCtx(), cfg);
     await commitEntity(adapter, makeCtx(), "stu", [{ stu_code: "S1", surname: "A" }]);
     const body = renderAzureSqlLoad(cfg, transport).body;
@@ -104,9 +104,11 @@ describe("AzureSqlTargetAdapter", () => {
   });
 
   it("resolves a service-principal credential via secrets + token provider", async () => {
-    const { authMode } = await buildAzureSqlTarget(makeCtx({ k: "the-secret" }), baseCfg, {
-      tokenProvider: async () => "tok",
-    });
+    const { authMode } = await buildAzureSqlTarget(
+      makeCtx({ k: "the-secret" }),
+      baseCfg,
+      { tokenProvider: async () => "tok" },
+    );
     expect(authMode).toBe("service-principal");
   });
 

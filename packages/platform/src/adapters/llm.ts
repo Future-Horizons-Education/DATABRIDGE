@@ -9,7 +9,10 @@ export interface LlmAdapter {
   readonly provider: string;
   readonly model: string;
 
-  chat(messages: LlmMessage[], opts?: LlmCallOptions): Promise<LlmResponse>;
+  chat(
+    messages: LlmMessage[],
+    opts?: LlmCallOptions
+  ): Promise<LlmResponse>;
 
   /** Structured JSON output — validates response against provided schema name. */
   chatStructured<T>(
@@ -53,12 +56,8 @@ export interface LlmOutputSchema<T> {
 export class PiiRedactingLlmAdapter implements LlmAdapter {
   constructor(private readonly inner: LlmAdapter) {}
 
-  get provider() {
-    return this.inner.provider;
-  }
-  get model() {
-    return this.inner.model;
-  }
+  get provider() { return this.inner.provider; }
+  get model() { return this.inner.model; }
 
   async chat(messages: LlmMessage[], opts?: LlmCallOptions): Promise<LlmResponse> {
     const safe = messages.map((m) => ({ ...m, content: redactPii(m.content) }));

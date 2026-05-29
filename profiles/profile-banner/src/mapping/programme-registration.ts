@@ -94,7 +94,9 @@ export const BANNER_PROGRAMME_REGISTRATION_MAP: BannerToCanonicalMap[] = [
  * field. Returns undefined if the field is not part of the programme/
  * registration projection.
  */
-export function canonicalToBannerEntity(canonicalField: string): BannerEntityKey | undefined {
+export function canonicalToBannerEntity(
+  canonicalField: string,
+): BannerEntityKey | undefined {
   const tableToEntity: Record<string, BannerEntityKey> = {
     SPRIDEN: "Spriden",
     SGBSTDN: "Sgbstdn",
@@ -103,7 +105,9 @@ export function canonicalToBannerEntity(canonicalField: string): BannerEntityKey
     SHRTGPA: "Shrtgpa",
     SHRDGMR: "Shrdgmr",
   };
-  const m = BANNER_PROGRAMME_REGISTRATION_MAP.find((e) => e.canonicalField === canonicalField);
+  const m = BANNER_PROGRAMME_REGISTRATION_MAP.find(
+    (e) => e.canonicalField === canonicalField,
+  );
   if (!m) return undefined;
   return tableToEntity[m.bannerTable];
 }
@@ -112,9 +116,12 @@ export function canonicalToBannerEntity(canonicalField: string): BannerEntityKey
  * Inverse: given a Banner table+column tuple, return the canonical field
  * it maps to.
  */
-export function bannerEntityToCanonical(table: string, column: string): string | undefined {
+export function bannerEntityToCanonical(
+  table: string,
+  column: string,
+): string | undefined {
   const m = BANNER_PROGRAMME_REGISTRATION_MAP.find(
-    (e) => e.bannerTable === table && e.bannerColumn === column
+    (e) => e.bannerTable === table && e.bannerColumn === column,
   );
   return m?.canonicalField;
 }

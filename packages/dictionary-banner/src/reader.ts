@@ -157,7 +157,7 @@ export function buildBannerCodeLists(input: {
 
 export async function readBannerDictionary(
   source: BannerDictionarySource,
-  options: { snapshotAt?: string } = {}
+  options: { snapshotAt?: string } = {},
 ): Promise<{ codeLists: CodeList[] }> {
   const rows = await source.fetchValidationRows();
   const args: { rows: BannerValidationRow[]; snapshotAt?: string } = { rows };
@@ -167,10 +167,7 @@ export async function readBannerDictionary(
 }
 
 /** The list of "must-have" Banner validation tables for a healthy install. */
-export const PRIORITY_BANNER_TABLES: ReadonlyArray<{
-  prefix: BannerValidationPrefix;
-  table: string;
-}> = [
+export const PRIORITY_BANNER_TABLES: ReadonlyArray<{ prefix: BannerValidationPrefix; table: string }> = [
   { prefix: "STV", table: "TERM" },
   { prefix: "STV", table: "MAJR" },
   { prefix: "STV", table: "DEGC" },
@@ -186,6 +183,6 @@ export const PRIORITY_BANNER_TABLES: ReadonlyArray<{
 export function findMissingPriorityTables(codeLists: CodeList[]): string[] {
   const present = new Set(codeLists.map((c) => c.id));
   return PRIORITY_BANNER_TABLES.map((t) => `BANNER.${t.prefix}${t.table}`).filter(
-    (id) => !present.has(id)
+    (id) => !present.has(id),
   );
 }

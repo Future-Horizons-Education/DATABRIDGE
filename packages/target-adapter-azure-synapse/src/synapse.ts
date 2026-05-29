@@ -7,7 +7,10 @@
  * performs the real load, and {@link renderSynapseCopyInto} emits the
  * deployable COPY INTO script. Stub by default — no real pool is touched.
  */
-import type { AdapterContext, TargetAdapterCapabilities } from "@databridge/adapter-spec";
+import type {
+  AdapterContext,
+  TargetAdapterCapabilities,
+} from "@databridge/adapter-spec";
 import {
   BufferedTargetTransport,
   ConfigurableTargetAdapter,
@@ -47,7 +50,7 @@ const SYNAPSE_CAPABILITIES: TargetAdapterCapabilities = {
 export class AzureSynapseTargetAdapter extends ConfigurableTargetAdapter {
   constructor(
     transport: TargetTransport,
-    opts: { requiredFieldsByEntity?: Record<string, readonly string[]> } = {}
+    opts: { requiredFieldsByEntity?: Record<string, readonly string[]> } = {},
   ) {
     const spec: ConfigurableTargetAdapterSpec = {
       id: "azure-synapse",
@@ -68,7 +71,7 @@ function trimTrailingSlash(s: string): string {
 /** Render a COPY INTO script (one statement per entity). */
 export function renderSynapseCopyInto(
   cfg: AzureSynapseConfig,
-  transport: BufferedTargetTransport
+  transport: BufferedTargetTransport,
 ): CloudArtifact {
   const schema = cfg.schema ?? "dbo";
   const fileType = cfg.fileType ?? "PARQUET";
@@ -105,19 +108,21 @@ export interface BuildAzureSynapseOptions {
 export async function buildAzureSynapseTarget(
   ctx: AdapterContext,
   cfg: AzureSynapseConfig,
-  opts: BuildAzureSynapseOptions = {}
+  opts: BuildAzureSynapseOptions = {},
 ): Promise<CloudTargetBundle> {
   const credential = await resolveAzureCredential(
     ctx,
     cfg.auth,
-    opts.tokenProvider ? { tokenProvider: opts.tokenProvider } : {}
+    opts.tokenProvider ? { tokenProvider: opts.tokenProvider } : {},
   );
   const transport = new BufferedTargetTransport(
-    opts.sink ? { idPrefix: "synapse", sink: opts.sink } : { idPrefix: "synapse" }
+    opts.sink ? { idPrefix: "synapse", sink: opts.sink } : { idPrefix: "synapse" },
   );
   const adapter = new AzureSynapseTargetAdapter(
     transport,
-    opts.requiredFieldsByEntity ? { requiredFieldsByEntity: opts.requiredFieldsByEntity } : {}
+    opts.requiredFieldsByEntity
+      ? { requiredFieldsByEntity: opts.requiredFieldsByEntity }
+      : {},
   );
   return {
     adapter,

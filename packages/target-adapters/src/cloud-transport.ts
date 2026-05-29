@@ -57,7 +57,11 @@ export interface BufferedWrite {
  * Live sink: invoked once per row when the transport is in live mode. May
  * return a backend-assigned id; when it returns void the synthetic id stands.
  */
-export type CloudSink = (entity: string, row: SampledRow, seq: number) => Promise<string | void>;
+export type CloudSink = (
+  entity: string,
+  row: SampledRow,
+  seq: number,
+) => Promise<string | void>;
 
 export interface BufferedTargetTransportOptions {
   /** Prefix for synthetic surrogate ids. Defaults to "row". */

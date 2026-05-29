@@ -24,7 +24,11 @@ import {
 } from "@databridge/rule-core";
 
 import { resolveProfile, listKnownProfileIds } from "./profile-loader.js";
-import { instantiateAdapter, makeAdapterContext, listKnownAdapterIds } from "./adapter-loader.js";
+import {
+  instantiateAdapter,
+  makeAdapterContext,
+  listKnownAdapterIds,
+} from "./adapter-loader.js";
 
 /* ----------------------------- argv parsing ------------------------------- */
 
@@ -88,7 +92,9 @@ export function parseAuditArgs(argv: string[]): AuditCmdArgs {
         try {
           args.adapterConfig = JSON.parse(raw) as Record<string, unknown>;
         } catch (err) {
-          throw new Error(`--adapter-config: invalid JSON (${(err as Error).message})`);
+          throw new Error(
+            `--adapter-config: invalid JSON (${(err as Error).message})`,
+          );
         }
         break;
       }
@@ -97,7 +103,9 @@ export function parseAuditArgs(argv: string[]): AuditCmdArgs {
         try {
           args.resourceMap = JSON.parse(raw) as Record<string, string>;
         } catch (err) {
-          throw new Error(`--resource-map: invalid JSON (${(err as Error).message})`);
+          throw new Error(
+            `--resource-map: invalid JSON (${(err as Error).message})`,
+          );
         }
         break;
       }
@@ -137,7 +145,7 @@ export async function runAuditCmd(
   io: {
     stdout?: (s: string) => void;
     stderr?: (s: string) => void;
-  } = {}
+  } = {},
 ): Promise<{ report: AuditReport; exitCode: number }> {
   const stdout = io.stdout ?? ((s) => process.stdout.write(s));
   const stderr = io.stderr ?? ((s) => process.stderr.write(s));
@@ -146,7 +154,7 @@ export async function runAuditCmd(
   if (!profile) {
     stderr(
       `databridge audit: unknown profile '${args.profileId}'.\n` +
-        `known: ${listKnownProfileIds().join(", ")}\n`
+        `known: ${listKnownProfileIds().join(", ")}\n`,
     );
     return { report: emptyReport(args), exitCode: 2 };
   }
@@ -156,7 +164,9 @@ export async function runAuditCmd(
     ...(args.maxFindingsPerRule !== undefined
       ? { maxFindingsPerRule: args.maxFindingsPerRule }
       : {}),
-    ...(args.maxFindingsTotal !== undefined ? { maxFindingsTotal: args.maxFindingsTotal } : {}),
+    ...(args.maxFindingsTotal !== undefined
+      ? { maxFindingsTotal: args.maxFindingsTotal }
+      : {}),
   };
   const engine = new AuditEngine(makeExecutor(), engineOpts);
 
@@ -175,7 +185,7 @@ export async function runAuditCmd(
     if ("error" in made) {
       stderr(
         `databridge audit: adapter '${args.adapterId}' failed to init: ${made.error}\n` +
-          `known adapters: ${listKnownAdapterIds().join(", ")}\n`
+          `known adapters: ${listKnownAdapterIds().join(", ")}\n`,
       );
       return { report: emptyReport(args), exitCode: 2 };
     }
@@ -183,7 +193,11 @@ export async function runAuditCmd(
   }
 
   const adapterCtx = source
-    ? makeAdapterContext(args.tenantId, `cli:${args.profileId}`, new AbortController().signal)
+    ? makeAdapterContext(
+        args.tenantId,
+        `cli:${args.profileId}`,
+        new AbortController().signal,
+      )
     : undefined;
 
   const report = await engine.runAudit({
@@ -196,11 +210,15 @@ export async function runAuditCmd(
   });
 
   const pretty = args.pretty ?? !args.out;
-  const serialized = pretty ? JSON.stringify(report, null, 2) : JSON.stringify(report);
+  const serialized = pretty
+    ? JSON.stringify(report, null, 2)
+    : JSON.stringify(report);
 
   if (args.out) {
     await writeFile(args.out, serialized + "\n", "utf8");
-    stderr(`databridge audit: wrote ${report.findingsTotal} findings to ${args.out}\n`);
+    stderr(
+      `databridge audit: wrote ${report.findingsTotal} findings to ${args.out}\n`,
+    );
   } else {
     stdout(serialized + "\n");
   }
@@ -208,7 +226,8 @@ export async function runAuditCmd(
   // Exit code policy: 0 if no ERROR/CRITICAL findings, 1 otherwise.
   // INFO/WARN do not fail the run — CI authors can tighten as needed.
   const failing =
-    (report.findingsBySeverity["ERROR"] ?? 0) + (report.findingsBySeverity["CRITICAL"] ?? 0);
+    (report.findingsBySeverity["ERROR"] ?? 0) +
+    (report.findingsBySeverity["CRITICAL"] ?? 0);
   return { report, exitCode: failing > 0 ? 1 : 0 };
 }
 

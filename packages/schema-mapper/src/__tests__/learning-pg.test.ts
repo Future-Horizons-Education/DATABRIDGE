@@ -6,7 +6,11 @@
  * upsert, dumpAll ordering, bulk loadAll, size, TRUNCATE clear).
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { PostgresLearningStore, type PgLearningClientLike, type LearnedMapping } from "../index.js";
+import {
+  PostgresLearningStore,
+  type PgLearningClientLike,
+  type LearnedMapping,
+} from "../index.js";
 import type { CrosswalkSystem } from "../types.js";
 
 interface RecordedCall {
@@ -15,10 +19,7 @@ interface RecordedCall {
 }
 
 interface QueryHandler {
-  (
-    sql: string,
-    params?: ReadonlyArray<unknown>
-  ):
+  (sql: string, params?: ReadonlyArray<unknown>):
     | { rows: unknown[]; rowCount?: number | null }
     | Promise<{ rows: unknown[]; rowCount?: number | null }>;
 }
@@ -35,7 +36,7 @@ class FakeClient implements PgLearningClientLike {
   }
   async query<T = Record<string, unknown>>(
     sql: string,
-    params?: ReadonlyArray<unknown>
+    params?: ReadonlyArray<unknown>,
   ): Promise<{ rows: T[]; rowCount?: number | null }> {
     this.calls.push({ sql, params: params ?? [] });
     const out = await this.handler(sql, params);
@@ -68,7 +69,9 @@ function makeSimulator() {
       const canonical = params[2] as string;
       const entity = params[3] as string;
       const acceptCount = isRecord ? 1 : (params[4] as number);
-      const lastAcceptedAt = isRecord ? (params[4] as string) : (params[5] as string);
+      const lastAcceptedAt = isRecord
+        ? (params[4] as string)
+        : (params[5] as string);
       const key = keyOf(system, sourceColumn, canonical);
       const existing = store.get(key);
       const next: LearnedMapping = existing
@@ -121,7 +124,8 @@ function makeSimulator() {
         }
         candidates.sort(
           (a, b) =>
-            b.acceptCount - a.acceptCount || b.lastAcceptedAt.localeCompare(a.lastAcceptedAt)
+            b.acceptCount - a.acceptCount ||
+            b.lastAcceptedAt.localeCompare(a.lastAcceptedAt),
         );
         const top = candidates[0];
         return {
@@ -145,7 +149,7 @@ function makeSimulator() {
         (a, b) =>
           a.system.localeCompare(b.system) ||
           a.sourceColumn.localeCompare(b.sourceColumn) ||
-          a.canonical.localeCompare(b.canonical)
+          a.canonical.localeCompare(b.canonical),
       );
       return {
         rows: all.map((m) => ({
@@ -236,8 +240,12 @@ describe("PostgresLearningStore", () => {
     });
     expect(first.acceptCount).toBe(1);
     expect(second.acceptCount).toBe(2);
-    const insertCall = clients.flatMap((c) => c.calls).find((c) => /^\s*INSERT/i.test(c.sql));
-    expect(insertCall?.sql).toMatch(/ON CONFLICT \(system, source_column, canonical\) DO UPDATE/);
+    const insertCall = clients
+      .flatMap((c) => c.calls)
+      .find((c) => /^\s*INSERT/i.test(c.sql));
+    expect(insertCall?.sql).toMatch(
+      /ON CONFLICT \(system, source_column, canonical\) DO UPDATE/,
+    );
     expect(insertCall?.sql).toMatch(/accept_count\s*\+\s*1/);
   });
 
@@ -262,7 +270,8 @@ describe("PostgresLearningStore", () => {
       .flatMap((c) => c.calls)
       .find(
         (c) =>
-          /^\s*SELECT/.test(c.sql) && c.sql.includes("ORDER BY system, source_column, canonical")
+          /^\s*SELECT/.test(c.sql) &&
+          c.sql.includes("ORDER BY system, source_column, canonical"),
       );
     expect(dumpCall).toBeDefined();
   });
@@ -319,7 +328,9 @@ describe("PostgresLearningStore", () => {
     const n = await store.size();
     // 2 distinct (system, sourceColumn) pairs even though 3 canonical mappings exist
     expect(n).toBe(2);
-    const countCall = clients.flatMap((c) => c.calls).find((c) => /^\s*SELECT COUNT/i.test(c.sql));
+    const countCall = clients
+      .flatMap((c) => c.calls)
+      .find((c) => /^\s*SELECT COUNT/i.test(c.sql));
     expect(countCall?.sql).toMatch(/COUNT\(DISTINCT \(system, source_column\)\)/);
   });
 
@@ -334,7 +345,9 @@ describe("PostgresLearningStore", () => {
     });
     await store.clear();
     expect(await store.size()).toBe(0);
-    const truncateCall = clients.flatMap((c) => c.calls).find((c) => /^\s*TRUNCATE/i.test(c.sql));
+    const truncateCall = clients
+      .flatMap((c) => c.calls)
+      .find((c) => /^\s*TRUNCATE/i.test(c.sql));
     expect(truncateCall).toBeDefined();
   });
 
@@ -351,10 +364,14 @@ describe("PostgresLearningStore", () => {
       autoMigrate: false,
     });
     await store.lookup("sits", "stu_id");
-    const ddlCall = clients.flatMap((c) => c.calls).find((c) => /CREATE TABLE/i.test(c.sql));
+    const ddlCall = clients
+      .flatMap((c) => c.calls)
+      .find((c) => /CREATE TABLE/i.test(c.sql));
     expect(ddlCall).toBeUndefined();
     await store.ensureSchema();
-    const ddlAfter = clients.flatMap((c) => c.calls).find((c) => /CREATE TABLE/i.test(c.sql));
+    const ddlAfter = clients
+      .flatMap((c) => c.calls)
+      .find((c) => /CREATE TABLE/i.test(c.sql));
     expect(ddlAfter).toBeDefined();
   });
 
@@ -364,7 +381,7 @@ describe("PostgresLearningStore", () => {
         new PostgresLearningStore({
           connectionString: "postgres://test",
           tableName: "drop; --",
-        })
+        }),
     ).toThrow(/unsafe identifier/);
   });
 

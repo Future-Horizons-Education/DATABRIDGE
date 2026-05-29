@@ -21,7 +21,10 @@ import {
   parsePartialPolicy,
   type MigrationPolicy,
 } from "@databridge/migration-policy";
-import { MigrationRunner, type SourceRow } from "@databridge/migration-runner";
+import {
+  MigrationRunner,
+  type SourceRow,
+} from "@databridge/migration-runner";
 import {
   InMemoryTransport,
   SitsTargetAdapter,
@@ -65,7 +68,7 @@ const RunBodyZ = z.object({
       entity: z.string().min(1),
       data: z.record(z.unknown()),
       sourceId: z.string().optional(),
-    })
+    }),
   ),
   dryRun: z.boolean().default(true),
   migrationRunId: z.string().min(1).default("run-adhoc"),
@@ -81,14 +84,14 @@ const VerifyBodyZ = z.object({
       entity: z.string(),
       id: z.string(),
       fields: z.record(z.unknown()),
-    })
+    }),
   ),
   b: z.array(
     z.object({
       entity: z.string(),
       id: z.string(),
       fields: z.record(z.unknown()),
-    })
+    }),
   ),
   treatBlanksAsEqual: z.boolean().default(false),
   fieldsByEntity: z.record(z.array(z.string())).optional(),
@@ -104,11 +107,13 @@ const PreFlightBodyZ = z.object({
         table: z.string(),
         field: z.string(),
         gates: z.string(),
-      })
+      }),
     ),
   ]),
   /** Pre-declared (table, field) pairs to seed the InMemoryTransport. */
-  declared: z.array(z.object({ table: z.string(), field: z.string() })).default([]),
+  declared: z
+    .array(z.object({ table: z.string(), field: z.string() }))
+    .default([]),
 });
 
 const QueueResolveBodyZ = z.object({
@@ -135,7 +140,9 @@ const LandBodyZ = z.object({
   runId: z.string().min(1).default("run-adhoc"),
   /** Cloud target id; may also be supplied as the `?target=` query param. */
   target: z.string().min(1).optional(),
-  rows: z.array(z.object({ entity: z.string().min(1), data: z.record(z.unknown()) })).default([]),
+  rows: z
+    .array(z.object({ entity: z.string().min(1), data: z.record(z.unknown()) }))
+    .default([]),
   dryRun: z.boolean().default(false),
   targetConfig: z.record(z.unknown()).default({}),
 });
@@ -144,11 +151,7 @@ const LandBodyZ = z.object({
 // Helpers
 // =====================================================================
 function makeStubContext(): AdapterContext {
-  const secrets: SecretAccessor = {
-    async get(_k: string) {
-      return "";
-    },
-  };
+  const secrets: SecretAccessor = { async get(_k: string) { return ""; } };
   return {
     tenantId: "api",
     connectionId: "stateless",
@@ -222,10 +225,9 @@ export async function migrationRoutes(app: FastifyInstance): Promise<void> {
     transport.declareField("SGBSTDN", "RESD_CODE");
 
     const targetSystem = parsed.data.targetSystem ?? policy.targetSystem;
-    const adapter =
-      targetSystem === "banner"
-        ? new BannerTargetAdapter(transport)
-        : new SitsTargetAdapter(transport);
+    const adapter = targetSystem === "banner"
+      ? new BannerTargetAdapter(transport)
+      : new SitsTargetAdapter(transport);
 
     const runnerOpts: ConstructorParameters<typeof MigrationRunner>[0] = {
       policy,
@@ -275,7 +277,7 @@ export async function migrationRoutes(app: FastifyInstance): Promise<void> {
     const report = verifyCanonical(
       parsed.data.a as CanonicalRecord[],
       parsed.data.b as CanonicalRecord[],
-      opts
+      opts,
     );
     const result: {
       report: typeof report;
@@ -414,7 +416,7 @@ export async function migrationRoutes(app: FastifyInstance): Promise<void> {
       bundle,
       makeStubContext(),
       parsed.data.rows.map((r) => ({ entity: r.entity, data: coerceRow(r.data) })),
-      { migrationRunId: parsed.data.runId, dryRun: parsed.data.dryRun }
+      { migrationRunId: parsed.data.runId, dryRun: parsed.data.dryRun },
     );
     return { runId: parsed.data.runId, target, summary };
   });

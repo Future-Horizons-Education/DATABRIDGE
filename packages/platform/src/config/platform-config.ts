@@ -32,9 +32,7 @@ export const PlatformConfigSchema = z.object({
   llmEuOnly: z.coerce.boolean().default(true),
 
   // Secrets
-  secretsProvider: z
-    .enum(["env", "doppler", "azure-kv", "aws-sm", "oci-vault", "hashicorp"])
-    .default("env"),
+  secretsProvider: z.enum(["env", "doppler", "azure-kv", "aws-sm", "oci-vault", "hashicorp"]).default("env"),
   dopplerToken: z.string().optional(),
 
   // Feature flags
@@ -77,7 +75,9 @@ export function loadPlatformConfig(env: NodeJS.ProcessEnv = process.env): Platfo
 
   const result = PlatformConfigSchema.safeParse(raw);
   if (!result.success) {
-    const issues = result.error.issues.map((i) => `  ${i.path.join(".")}: ${i.message}`).join("\n");
+    const issues = result.error.issues
+      .map((i) => `  ${i.path.join(".")}: ${i.message}`)
+      .join("\n");
     throw new Error(`Platform configuration invalid:\n${issues}`);
   }
   return result.data;

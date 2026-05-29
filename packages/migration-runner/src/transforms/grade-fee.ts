@@ -4,7 +4,10 @@
  * Both delegate to a CodesetMapRegistry; both honour the on-missing
  * policy (warn / fail / skip) or the defaultToUnknown flag.
  */
-import type { GradeSchemePolicy, FeeStatusPolicy } from "@databridge/migration-policy";
+import type {
+  GradeSchemePolicy,
+  FeeStatusPolicy,
+} from "@databridge/migration-policy";
 import { translateCode, type CodesetMapRegistry } from "@databridge/codeset-mapper";
 import type { ProvenanceEntry } from "../types.js";
 
@@ -20,7 +23,7 @@ export function translateGrade(
   registry: CodesetMapRegistry,
   policy: GradeSchemePolicy,
   letter: string,
-  tenantId?: string
+  tenantId?: string,
 ): CodesetTranslateOutcome {
   const args: Parameters<typeof translateThroughMapId>[1] = {
     mapId: policy.mapId,
@@ -37,7 +40,7 @@ export function translateFeeStatus(
   registry: CodesetMapRegistry,
   policy: FeeStatusPolicy,
   resd: string,
-  tenantId?: string
+  tenantId?: string,
 ): CodesetTranslateOutcome {
   const args: Parameters<typeof translateThroughMapId>[1] = {
     mapId: policy.mapId,
@@ -70,7 +73,7 @@ function translateThroughMapId(
     slot: string;
     onMissing: "fail" | "warn" | "skip";
     tenantId?: string;
-  }
+  },
 ): CodesetTranslateOutcome {
   // Map-id format: "<codelist-pair>@<version>" — resolve via codelists from registry.
   const map = registry.get(args.mapId);

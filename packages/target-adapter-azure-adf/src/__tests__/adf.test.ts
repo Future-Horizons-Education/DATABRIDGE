@@ -1,5 +1,9 @@
 import { describe, it, expect, vi } from "vitest";
-import type { AdapterContext, SampledRow, TargetAdapter } from "@databridge/adapter-spec";
+import type {
+  AdapterContext,
+  SampledRow,
+  TargetAdapter,
+} from "@databridge/adapter-spec";
 import { BufferedTargetTransport } from "@databridge/target-adapters";
 import {
   buildAzureAdfTarget,
@@ -12,11 +16,7 @@ function makeCtx(secrets: Record<string, string> = {}): AdapterContext {
   return {
     tenantId: "t",
     connectionId: "c",
-    secrets: {
-      async get(k: string) {
-        return secrets[k] ?? "";
-      },
-    },
+    secrets: { async get(k: string) { return secrets[k] ?? ""; } },
     logger: { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} },
     signal: new AbortController().signal,
   };
@@ -27,7 +27,7 @@ async function commitEntity(
   ctx: AdapterContext,
   entity: string,
   rows: SampledRow[],
-  dryRun = false
+  dryRun = false,
 ) {
   const validation = await adapter.validate(ctx, { entity, rows });
   const staged = await adapter.stage(ctx, {
@@ -71,7 +71,13 @@ describe("AzureAdfTargetAdapter", () => {
 
   it("dry-run commit skips every row and writes nothing", async () => {
     const { adapter, transport } = await buildAzureAdfTarget(makeCtx(), baseCfg);
-    const { commit } = await commitEntity(adapter, makeCtx(), "stu", [{ stu_code: "S1" }], true);
+    const { commit } = await commitEntity(
+      adapter,
+      makeCtx(),
+      "stu",
+      [{ stu_code: "S1" }],
+      true,
+    );
     expect(commit.committed).toBe(0);
     expect(commit.outcomes[0]?.status).toBe("skipped");
     expect(transport.size).toBe(0);
@@ -90,7 +96,10 @@ describe("AzureAdfTargetAdapter", () => {
       properties: { activities: Array<{ name: string }> };
     };
     expect(pipeline.name).toBe("databridge_land_uni-adf");
-    expect(pipeline.properties.activities.map((a) => a.name)).toEqual(["Copy_stu", "Copy_sce"]);
+    expect(pipeline.properties.activities.map((a) => a.name)).toEqual([
+      "Copy_stu",
+      "Copy_sce",
+    ]);
   });
 
   it("honours datasetByEntity overrides in the emitted pipeline", async () => {
@@ -124,7 +133,9 @@ describe("AzureAdfTargetAdapter", () => {
     const sink = vi.fn(async (_e: string, _r: SampledRow, seq: number) => `gen-${seq}`);
     const { adapter, transport } = await buildAzureAdfTarget(makeCtx(), baseCfg, { sink });
     expect(transport.mode).toBe("live");
-    const { commit } = await commitEntity(adapter, makeCtx(), "stu", [{ stu_code: "S1" }]);
+    const { commit } = await commitEntity(adapter, makeCtx(), "stu", [
+      { stu_code: "S1" },
+    ]);
     expect(sink).toHaveBeenCalledTimes(1);
     expect(commit.outcomes[0]?.targetId).toBe("gen-0");
   });
@@ -132,11 +143,8 @@ describe("AzureAdfTargetAdapter", () => {
   it("reflects the resolved auth mode when a token provider yields a token", async () => {
     const { authMode } = await buildAzureAdfTarget(
       makeCtx(),
-      {
-        auth: { mode: "service-principal", tenantId: "t", clientId: "c", clientSecretKey: "k" },
-        dataFactoryName: "x",
-      },
-      { tokenProvider: async () => "tok" }
+      { auth: { mode: "service-principal", tenantId: "t", clientId: "c", clientSecretKey: "k" }, dataFactoryName: "x" },
+      { tokenProvider: async () => "tok" },
     );
     expect(authMode).toBe("service-principal");
   });
@@ -144,9 +152,9 @@ describe("AzureAdfTargetAdapter", () => {
   it("does not support rollback", async () => {
     const { adapter } = await buildAzureAdfTarget(makeCtx(), baseCfg);
     expect(adapter.capabilities.supportsRollback).toBe(false);
-    await expect(adapter.rollback(makeCtx(), { batchId: "x", reason: "r" })).rejects.toThrow(
-      /does not support rollback/
-    );
+    await expect(
+      adapter.rollback(makeCtx(), { batchId: "x", reason: "r" }),
+    ).rejects.toThrow(/does not support rollback/);
   });
 
   it("constructs the adapter class directly with an injected transport", () => {
