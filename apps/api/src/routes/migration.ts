@@ -46,6 +46,12 @@ import { OperationalInputQueue } from "@databridge/operational-input-queue";
 import { createDefaultRegistry } from "@databridge/codeset-mapper";
 import type { AdapterContext } from "@databridge/adapter-spec";
 import type { SecretAccessor } from "@databridge/platform";
+import {
+  findTargetAdapter,
+  listTargetAdapters,
+  landWith,
+  coerceRow,
+} from "../target-adapter-registry.js";
 
 /** A shared queue instance across handlers within one server process. */
 const queue = new OperationalInputQueue();
@@ -128,6 +134,17 @@ const QueueEnqueueBodyZ = z.object({
   reason: z.string(),
   sourceId: z.string().optional(),
   context: z.record(z.unknown()).optional(),
+});
+
+const LandBodyZ = z.object({
+  runId: z.string().min(1).default("run-adhoc"),
+  /** Cloud target id; may also be supplied as the `?target=` query param. */
+  target: z.string().min(1).optional(),
+  rows: z
+    .array(z.object({ entity: z.string().min(1), data: z.record(z.unknown()) }))
+    .default([]),
+  dryRun: z.boolean().default(false),
+  targetConfig: z.record(z.unknown()).default({}),
 });
 
 // =====================================================================
@@ -360,5 +377,47 @@ export async function migrationRoutes(app: FastifyInstance): Promise<void> {
         message: err instanceof Error ? err.message : String(err),
       });
     }
+  });
+
+  // Phase C — cloud landing targets -----------------------------------
+  app.get("/migration/targets", async () => {
+    return { targets: listTargetAdapters() };
+  });
+
+  // POST /migration/land?target=azure-{adf|synapse|sql|fabric}
+  // Lands canonical rows onto a cloud target. Dry-run / stub-safe by
+  // default — no real tenant is touched without live credentials wired.
+  app.post("/migration/land", async (req, reply) => {
+    const parsed = LandBodyZ.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: "invalid_body", issues: parsed.error.issues });
+    }
+    const query = req.query as Record<string, unknown>;
+    const target =
+      typeof query["target"] === "string" && query["target"].length > 0
+        ? query["target"]
+        : parsed.data.target;
+    if (!target) {
+      return reply.code(400).send({
+        error: "missing_target",
+        message: "provide a target via ?target= or the request body",
+      });
+    }
+    const entry = findTargetAdapter(target);
+    if (!entry) {
+      return reply.code(400).send({
+        error: "unknown_target",
+        message: `unknown target "${target}"`,
+        known: listTargetAdapters().map((t) => t.id),
+      });
+    }
+    const bundle = await entry.build(makeStubContext(), parsed.data.targetConfig);
+    const summary = await landWith(
+      bundle,
+      makeStubContext(),
+      parsed.data.rows.map((r) => ({ entity: r.entity, data: coerceRow(r.data) })),
+      { migrationRunId: parsed.data.runId, dryRun: parsed.data.dryRun },
+    );
+    return { runId: parsed.data.runId, target, summary };
   });
 }

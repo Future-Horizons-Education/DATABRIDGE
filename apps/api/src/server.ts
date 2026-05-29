@@ -146,6 +146,8 @@ export async function build(options: BuildOptions = {}): Promise<FastifyInstance
       "/migration/queue/enqueue",
       "/migration/queue/resolve",
       "/migration/queue/skip",
+      "/migration/targets",
+      "/migration/land",
       "/findings/waivers",
       "/findings/waivers/ack",
       "/findings/waivers/waive",
