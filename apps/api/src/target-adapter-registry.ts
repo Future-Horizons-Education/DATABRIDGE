@@ -19,7 +19,11 @@ import { buildAzureAdfTarget } from "@databridge/target-adapter-azure-adf";
 import { buildAzureSynapseTarget } from "@databridge/target-adapter-azure-synapse";
 import { buildAzureSqlTarget } from "@databridge/target-adapter-azure-sql";
 import { buildMicrosoftFabricTarget } from "@databridge/target-adapter-microsoft-fabric";
+import { buildOracleGoldenGateTarget } from "@databridge/target-adapter-oracle-goldengate";
+import { buildOracleAdwTarget } from "@databridge/target-adapter-oracle-adw";
+import { buildOracleOciDiTarget } from "@databridge/target-adapter-oracle-oci-di";
 import type { AzureAuthConfig, AzureAuthMode } from "@databridge/azure-auth";
+import type { OracleAuthConfig, OracleAuthMode } from "@databridge/oracle-auth";
 
 export interface TargetAdapterRegistryEntry {
   id: string;
@@ -78,6 +82,25 @@ function asStringArrayRecord(v: unknown): Record<string, string[]> | undefined {
 }
 
 const AZURE_MODE_LIST: readonly string[] = AZURE_MODES;
+
+const ORACLE_MODES: readonly OracleAuthMode[] = [
+  "wallet",
+  "iam",
+  "instance-principal",
+];
+const ORACLE_MODE_LIST: readonly string[] = ORACLE_MODES;
+
+function asOracleAuth(v: unknown): OracleAuthConfig {
+  const a = asRecord(v);
+  const rawMode = a["mode"];
+  const mode = ORACLE_MODES.find((m) => m === rawMode) ?? "wallet";
+  const cfg: OracleAuthConfig = { mode };
+  if (typeof a["secretKey"] === "string") cfg.secretKey = a["secretKey"];
+  if (typeof a["region"] === "string") cfg.region = a["region"];
+  if (typeof a["walletLocation"] === "string") cfg.walletLocation = a["walletLocation"];
+  if (typeof a["connectString"] === "string") cfg.connectString = a["connectString"];
+  return cfg;
+}
 
 /* ----------------------------- the registry ------------------------------- */
 
@@ -138,6 +161,48 @@ export const TARGET_ADAPTER_REGISTRY: ReadonlyArray<TargetAdapterRegistryEntry> 
         lakehouse: asString(cfg["lakehouse"], "databridge_lh"),
         ...(typeof cfg["warehouse"] === "string" ? { warehouse: cfg["warehouse"] } : {}),
         ...(cfg["mode"] === "overwrite" || cfg["mode"] === "append" ? { mode: cfg["mode"] } : {}),
+      }),
+  },
+  {
+    id: "oracle-goldengate",
+    displayName: "Oracle GoldenGate",
+    family: "oracle",
+    authModes: ORACLE_MODE_LIST,
+    build: (ctx, cfg) =>
+      buildOracleGoldenGateTarget(ctx, {
+        auth: asOracleAuth(cfg["auth"]),
+        ...(typeof cfg["replicatName"] === "string" ? { replicatName: cfg["replicatName"] } : {}),
+        ...(typeof cfg["targetSchema"] === "string" ? { targetSchema: cfg["targetSchema"] } : {}),
+        ...(typeof cfg["sourceSchema"] === "string" ? { sourceSchema: cfg["sourceSchema"] } : {}),
+      }),
+  },
+  {
+    id: "oracle-adw",
+    displayName: "Oracle Autonomous Data Warehouse",
+    family: "oracle",
+    authModes: ORACLE_MODE_LIST,
+    build: (ctx, cfg) => {
+      const mergeKeysByEntity = asStringArrayRecord(cfg["mergeKeysByEntity"]);
+      return buildOracleAdwTarget(ctx, {
+        auth: asOracleAuth(cfg["auth"]),
+        ...(typeof cfg["schema"] === "string" ? { schema: cfg["schema"] } : {}),
+        ...(mergeKeysByEntity ? { mergeKeysByEntity } : {}),
+      });
+    },
+  },
+  {
+    id: "oracle-oci-di",
+    displayName: "Oracle OCI Data Integration",
+    family: "oracle",
+    authModes: ORACLE_MODE_LIST,
+    build: (ctx, cfg) =>
+      buildOracleOciDiTarget(ctx, {
+        auth: asOracleAuth(cfg["auth"]),
+        ...(typeof cfg["workspaceId"] === "string" ? { workspaceId: cfg["workspaceId"] } : {}),
+        ...(typeof cfg["projectName"] === "string" ? { projectName: cfg["projectName"] } : {}),
+        ...(typeof cfg["targetDataAssetKey"] === "string"
+          ? { targetDataAssetKey: cfg["targetDataAssetKey"] }
+          : {}),
       }),
   },
 ];

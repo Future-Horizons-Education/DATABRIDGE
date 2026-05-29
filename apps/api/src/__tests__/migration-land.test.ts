@@ -50,11 +50,22 @@ describe("apps/api Phase C — cloud landing", () => {
     };
     const ids = body.targets.map((t) => t.id);
     expect(ids).toEqual(
-      expect.arrayContaining(["azure-adf", "azure-synapse", "azure-sql", "azure-fabric"]),
+      expect.arrayContaining([
+        "azure-adf",
+        "azure-synapse",
+        "azure-sql",
+        "azure-fabric",
+        "oracle-goldengate",
+        "oracle-adw",
+        "oracle-oci-di",
+      ]),
     );
     const adf = body.targets.find((t) => t.id === "azure-adf");
     expect(adf?.family).toBe("azure");
     expect(adf?.authModes).toContain("managed-identity");
+    const gg = body.targets.find((t) => t.id === "oracle-goldengate");
+    expect(gg?.family).toBe("oracle");
+    expect(gg?.authModes).toContain("wallet");
   });
 
   it("lands rows onto ADF via the ?target= query param", async () => {
@@ -115,6 +126,41 @@ describe("apps/api Phase C — cloud landing", () => {
       tables: Array<{ entity: string; rowCount: number }>;
     };
     expect(plan.tables.find((t) => t.entity === "stu")?.rowCount).toBe(2);
+  });
+
+  it("lands rows onto Oracle GoldenGate (replicat param file)", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/migration/land?target=oracle-goldengate",
+      payload: { rows, targetConfig: { targetSchema: "DWH" } },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json() as LandResponse;
+    expect(body.summary.artifact.kind).toBe("gg-replicat-param");
+    expect(body.summary.artifact.body).toContain("MAP CANONICAL.STU, TARGET DWH.STU");
+  });
+
+  it("lands rows onto Oracle ADW with a MERGE", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/migration/land?target=oracle-adw",
+      payload: { rows, targetConfig: { schema: "DWH", mergeKeysByEntity: { stu: ["stu_code"] } } },
+    });
+    const body = res.json() as LandResponse;
+    expect(body.summary.artifact.kind).toBe("adw-load-sql");
+    expect(body.summary.artifact.body).toContain("MERGE INTO DWH.STU tgt");
+  });
+
+  it("lands rows onto OCI Data Integration (task definitions)", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/migration/land?target=oracle-oci-di",
+      payload: { rows },
+    });
+    const body = res.json() as LandResponse;
+    expect(body.summary.artifact.kind).toBe("oci-di-task");
+    const plan = JSON.parse(body.summary.artifact.body) as { tasks: unknown[] };
+    expect(plan.tasks).toHaveLength(2);
   });
 
   it("dry-run commits nothing but still renders an artefact", async () => {
