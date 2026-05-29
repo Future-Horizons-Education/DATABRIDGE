@@ -30,10 +30,7 @@ export interface TargetAdapterRegistryEntry {
   displayName: string;
   family: "azure" | "oracle";
   authModes: readonly string[];
-  build(
-    ctx: AdapterContext,
-    targetConfig: Record<string, unknown>,
-  ): Promise<CloudTargetBundle>;
+  build(ctx: AdapterContext, targetConfig: Record<string, unknown>): Promise<CloudTargetBundle>;
 }
 
 /* --------------------------- config coercion ------------------------------ */
@@ -46,11 +43,7 @@ function asRecord(v: unknown): Record<string, unknown> {
   return typeof v === "object" && v !== null ? (v as Record<string, unknown>) : {};
 }
 
-const AZURE_MODES: readonly AzureAuthMode[] = [
-  "managed-identity",
-  "service-principal",
-  "az-cli",
-];
+const AZURE_MODES: readonly AzureAuthMode[] = ["managed-identity", "service-principal", "az-cli"];
 
 function asAzureAuth(v: unknown): AzureAuthConfig {
   const a = asRecord(v);
@@ -83,11 +76,7 @@ function asStringArrayRecord(v: unknown): Record<string, string[]> | undefined {
 
 const AZURE_MODE_LIST: readonly string[] = AZURE_MODES;
 
-const ORACLE_MODES: readonly OracleAuthMode[] = [
-  "wallet",
-  "iam",
-  "instance-principal",
-];
+const ORACLE_MODES: readonly OracleAuthMode[] = ["wallet", "iam", "instance-principal"];
 const ORACLE_MODE_LIST: readonly string[] = ORACLE_MODES;
 
 function asOracleAuth(v: unknown): OracleAuthConfig {
@@ -207,15 +196,11 @@ export const TARGET_ADAPTER_REGISTRY: ReadonlyArray<TargetAdapterRegistryEntry> 
   },
 ];
 
-export function findTargetAdapter(
-  id: string,
-): TargetAdapterRegistryEntry | undefined {
+export function findTargetAdapter(id: string): TargetAdapterRegistryEntry | undefined {
   return TARGET_ADAPTER_REGISTRY.find((e) => e.id === id);
 }
 
-export function listTargetAdapters(): ReadonlyArray<
-  Omit<TargetAdapterRegistryEntry, "build">
-> {
+export function listTargetAdapters(): ReadonlyArray<Omit<TargetAdapterRegistryEntry, "build">> {
   return TARGET_ADAPTER_REGISTRY.map(({ id, displayName, family, authModes }) => ({
     id,
     displayName,
@@ -263,7 +248,7 @@ export async function landWith(
   bundle: CloudTargetBundle,
   ctx: AdapterContext,
   rows: readonly LandRowInput[],
-  opts: { migrationRunId: string; dryRun: boolean },
+  opts: { migrationRunId: string; dryRun: boolean }
 ): Promise<LandSummary> {
   const groups = new Map<string, SampledRow[]>();
   const order: string[] = [];

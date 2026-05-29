@@ -46,7 +46,7 @@ const AZURE_SQL_CAPABILITIES: TargetAdapterCapabilities = {
 export class AzureSqlTargetAdapter extends ConfigurableTargetAdapter {
   constructor(
     transport: TargetTransport,
-    opts: { requiredFieldsByEntity?: Record<string, readonly string[]> } = {},
+    opts: { requiredFieldsByEntity?: Record<string, readonly string[]> } = {}
   ) {
     const spec: ConfigurableTargetAdapterSpec = {
       id: "azure-sql",
@@ -78,7 +78,7 @@ function columnsFor(rows: readonly SampledRow[]): string[] {
 /** Render a T-SQL load script (TVP MERGE/INSERT per entity). */
 export function renderAzureSqlLoad(
   cfg: AzureSqlConfig,
-  transport: BufferedTargetTransport,
+  transport: BufferedTargetTransport
 ): CloudArtifact {
   const schema = cfg.schema ?? "dbo";
   const blocks = transport.entities().map((entity) => {
@@ -120,21 +120,19 @@ export interface BuildAzureSqlOptions {
 export async function buildAzureSqlTarget(
   ctx: AdapterContext,
   cfg: AzureSqlConfig,
-  opts: BuildAzureSqlOptions = {},
+  opts: BuildAzureSqlOptions = {}
 ): Promise<CloudTargetBundle> {
   const credential = await resolveAzureCredential(
     ctx,
     cfg.auth,
-    opts.tokenProvider ? { tokenProvider: opts.tokenProvider } : {},
+    opts.tokenProvider ? { tokenProvider: opts.tokenProvider } : {}
   );
   const transport = new BufferedTargetTransport(
-    opts.sink ? { idPrefix: "azsql", sink: opts.sink } : { idPrefix: "azsql" },
+    opts.sink ? { idPrefix: "azsql", sink: opts.sink } : { idPrefix: "azsql" }
   );
   const adapter = new AzureSqlTargetAdapter(
     transport,
-    opts.requiredFieldsByEntity
-      ? { requiredFieldsByEntity: opts.requiredFieldsByEntity }
-      : {},
+    opts.requiredFieldsByEntity ? { requiredFieldsByEntity: opts.requiredFieldsByEntity } : {}
   );
   return {
     adapter,

@@ -11,10 +11,7 @@
  */
 import type { AdapterContext } from "@databridge/adapter-spec";
 
-export type AzureAuthMode =
-  | "managed-identity"
-  | "service-principal"
-  | "az-cli";
+export type AzureAuthMode = "managed-identity" | "service-principal" | "az-cli";
 
 export interface AzureAuthConfig {
   mode: AzureAuthMode;
@@ -47,7 +44,7 @@ export interface AzureTokenCredentialLike {
 export type AzureTokenProvider = (
   cfg: AzureAuthConfig,
   ctx: AdapterContext,
-  scope: string,
+  scope: string
 ) => Promise<string | undefined>;
 
 export interface ResolveAzureOptions {
@@ -69,7 +66,7 @@ export const AZURE_STORAGE_SCOPE = "https://storage.azure.com/.default";
 export async function resolveAzureCredential(
   ctx: AdapterContext,
   cfg: AzureAuthConfig,
-  opts: ResolveAzureOptions = {},
+  opts: ResolveAzureOptions = {}
 ): Promise<AzureCredential | undefined> {
   const scope = opts.scope ?? AZURE_ARM_SCOPE;
   const provider = opts.tokenProvider ?? defaultAzureTokenProvider;
@@ -90,11 +87,7 @@ export async function resolveAzureCredential(
   return cred;
 }
 
-const defaultAzureTokenProvider: AzureTokenProvider = async (
-  cfg,
-  ctx,
-  scope,
-) => {
+const defaultAzureTokenProvider: AzureTokenProvider = async (cfg, ctx, scope) => {
   const credential = await loadAzureCredential(cfg, ctx);
   if (!credential) return undefined;
   const tok = await credential.getToken(scope);
@@ -107,7 +100,7 @@ interface AzureIdentityModuleLike {
   ClientSecretCredential: new (
     tenantId: string,
     clientId: string,
-    clientSecret: string,
+    clientSecret: string
   ) => AzureTokenCredentialLike;
 }
 
@@ -118,7 +111,7 @@ interface AzureIdentityModuleLike {
  */
 async function loadAzureCredential(
   cfg: AzureAuthConfig,
-  ctx: AdapterContext,
+  ctx: AdapterContext
 ): Promise<AzureTokenCredentialLike | undefined> {
   let mod: AzureIdentityModuleLike;
   try {
@@ -127,7 +120,7 @@ async function loadAzureCredential(
   } catch {
     ctx.logger.warn(
       "azure-auth: optional peer '@azure/identity' is not installed — " +
-        "run `pnpm add @azure/identity` for live Azure auth; using stub mode",
+        "run `pnpm add @azure/identity` for live Azure auth; using stub mode"
     );
     return undefined;
   }
@@ -139,9 +132,7 @@ async function loadAzureCredential(
     case "az-cli":
       return new mod.AzureCliCredential();
     case "service-principal": {
-      const secret = cfg.clientSecretKey
-        ? await ctx.secrets.get(cfg.clientSecretKey)
-        : undefined;
+      const secret = cfg.clientSecretKey ? await ctx.secrets.get(cfg.clientSecretKey) : undefined;
       if (!cfg.tenantId || !cfg.clientId || !secret) return undefined;
       return new mod.ClientSecretCredential(cfg.tenantId, cfg.clientId, secret);
     }

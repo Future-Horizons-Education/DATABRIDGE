@@ -166,7 +166,11 @@ describe("OnnxEmbedding", () => {
     const e = new OnnxEmbedding({
       modelPath: "x.onnx",
       dimensions: 16,
-      sessionFactory: async () => ({ run: async () => { throw new Error("bad shape"); } }),
+      sessionFactory: async () => ({
+        run: async () => {
+          throw new Error("bad shape");
+        },
+      }),
     });
     expect(await e.embed("q")).toHaveLength(16);
   });

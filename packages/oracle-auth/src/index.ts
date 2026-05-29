@@ -37,7 +37,7 @@ export interface OracleCredential {
 
 export type OracleTokenProvider = (
   cfg: OracleAuthConfig,
-  ctx: AdapterContext,
+  ctx: AdapterContext
 ) => Promise<string | undefined>;
 
 export interface ResolveOracleOptions {
@@ -53,7 +53,7 @@ export interface ResolveOracleOptions {
 export async function resolveOracleCredential(
   ctx: AdapterContext,
   cfg: OracleAuthConfig,
-  opts: ResolveOracleOptions = {},
+  opts: ResolveOracleOptions = {}
 ): Promise<OracleCredential | undefined> {
   const provider = opts.tokenProvider ?? defaultOracleTokenProvider;
   let token: string | undefined;
@@ -94,12 +94,12 @@ async function loadOciToken(ctx: AdapterContext): Promise<string | undefined> {
   } catch {
     ctx.logger.warn(
       "oracle-auth: optional peer 'oci-common' is not installed — " +
-        "run `pnpm add oci-common oci-sdk` for live OCI auth; using stub mode",
+        "run `pnpm add oci-common oci-sdk` for live OCI auth; using stub mode"
     );
     return undefined;
   }
   ctx.logger.debug(
-    "oracle-auth: oci-common present; live OCI token acquisition is not wired in this phase",
+    "oracle-auth: oci-common present; live OCI token acquisition is not wired in this phase"
   );
   return undefined;
 }

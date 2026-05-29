@@ -1,20 +1,16 @@
 import { describe, it, expect, vi } from "vitest";
-import type {
-  AdapterContext,
-  SampledRow,
-  TargetAdapter,
-} from "@databridge/adapter-spec";
-import {
-  buildOracleOciDiTarget,
-  renderOciDiTasks,
-  type OracleOciDiConfig,
-} from "../index.js";
+import type { AdapterContext, SampledRow, TargetAdapter } from "@databridge/adapter-spec";
+import { buildOracleOciDiTarget, renderOciDiTasks, type OracleOciDiConfig } from "../index.js";
 
 function makeCtx(secrets: Record<string, string> = {}): AdapterContext {
   return {
     tenantId: "t",
     connectionId: "c",
-    secrets: { async get(k: string) { return secrets[k] ?? ""; } },
+    secrets: {
+      async get(k: string) {
+        return secrets[k] ?? "";
+      },
+    },
     logger: { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} },
     signal: new AbortController().signal,
   };
@@ -25,7 +21,7 @@ async function commitEntity(
   ctx: AdapterContext,
   entity: string,
   rows: SampledRow[],
-  dryRun = false,
+  dryRun = false
 ) {
   await adapter.validate(ctx, { entity, rows });
   const staged = await adapter.stage(ctx, {

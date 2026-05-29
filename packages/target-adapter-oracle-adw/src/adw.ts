@@ -44,7 +44,7 @@ const ADW_CAPABILITIES: TargetAdapterCapabilities = {
 export class OracleAdwTargetAdapter extends ConfigurableTargetAdapter {
   constructor(
     transport: TargetTransport,
-    opts: { requiredFieldsByEntity?: Record<string, readonly string[]> } = {},
+    opts: { requiredFieldsByEntity?: Record<string, readonly string[]> } = {}
   ) {
     const spec: ConfigurableTargetAdapterSpec = {
       id: "oracle-adw",
@@ -77,7 +77,7 @@ function columnsFor(rows: readonly SampledRow[]): string[] {
 /** Render an Oracle ADW load script (MERGE/INSERT per entity). */
 export function renderAdwLoad(
   cfg: OracleAdwConfig,
-  transport: BufferedTargetTransport,
+  transport: BufferedTargetTransport
 ): CloudArtifact {
   const schema = cfg.schema ?? "ADMIN";
   const blocks = transport.entities().map((entity) => {
@@ -120,21 +120,19 @@ export interface BuildOracleAdwOptions {
 export async function buildOracleAdwTarget(
   ctx: AdapterContext,
   cfg: OracleAdwConfig,
-  opts: BuildOracleAdwOptions = {},
+  opts: BuildOracleAdwOptions = {}
 ): Promise<CloudTargetBundle> {
   const credential = await resolveOracleCredential(
     ctx,
     cfg.auth,
-    opts.tokenProvider ? { tokenProvider: opts.tokenProvider } : {},
+    opts.tokenProvider ? { tokenProvider: opts.tokenProvider } : {}
   );
   const transport = new BufferedTargetTransport(
-    opts.sink ? { idPrefix: "adw", sink: opts.sink } : { idPrefix: "adw" },
+    opts.sink ? { idPrefix: "adw", sink: opts.sink } : { idPrefix: "adw" }
   );
   const adapter = new OracleAdwTargetAdapter(
     transport,
-    opts.requiredFieldsByEntity
-      ? { requiredFieldsByEntity: opts.requiredFieldsByEntity }
-      : {},
+    opts.requiredFieldsByEntity ? { requiredFieldsByEntity: opts.requiredFieldsByEntity } : {}
   );
   return {
     adapter,
