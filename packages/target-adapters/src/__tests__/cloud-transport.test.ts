@@ -10,7 +10,11 @@ function makeCtx(): AdapterContext {
   return {
     tenantId: "t",
     connectionId: "c",
-    secrets: { async get() { return ""; } },
+    secrets: {
+      async get() {
+        return "";
+      },
+    },
     logger: { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} },
     signal: new AbortController().signal,
   };
@@ -160,7 +164,7 @@ describe("ConfigurableTargetAdapter", () => {
         entity: "stu",
         rows: [{ stu_code: "S1" }, { stu_code: "S2" }, { stu_code: "S3" }],
         dryRun: false,
-      }),
+      })
     ).rejects.toThrow(/exceeds adapter limit/);
   });
 });

@@ -163,7 +163,7 @@ export class HashingTokeniser implements OnnxTokeniser {
 export function meanPool(
   data: ArrayLike<number>,
   dims: readonly number[],
-  attentionMask: readonly number[],
+  attentionMask: readonly number[]
 ): Float32Array {
   const seqLen = dims[1] ?? 0;
   const hidden = dims[2] ?? 0;
@@ -233,11 +233,7 @@ export class OnnxEmbedding implements EmbeddingBackend {
       const outputs = await session.run(this.buildFeeds(enc));
       const tensor = outputs[this.outputName] ?? Object.values(outputs)[0];
       if (!tensor) return this.fallback.embed(text);
-      return meanPool(
-        tensor.data as ArrayLike<number>,
-        tensor.dims,
-        enc.attentionMask,
-      );
+      return meanPool(tensor.data as ArrayLike<number>, tensor.dims, enc.attentionMask);
     } catch {
       // Any inference error degrades gracefully to the deterministic path.
       return this.fallback.embed(text);
@@ -253,8 +249,7 @@ export class OnnxEmbedding implements EmbeddingBackend {
     const len = enc.inputIds.length;
     const T = this.tensorCtor;
     if (T) {
-      const toI64 = (xs: number[]): BigInt64Array =>
-        BigInt64Array.from(xs.map((x) => BigInt(x)));
+      const toI64 = (xs: number[]): BigInt64Array => BigInt64Array.from(xs.map((x) => BigInt(x)));
       return {
         input_ids: new T("int64", toI64(enc.inputIds), [1, len]),
         attention_mask: new T("int64", toI64(enc.attentionMask), [1, len]),

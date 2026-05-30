@@ -135,9 +135,7 @@ const LandBodyZ = z.object({
   runId: z.string().min(1).default("run-adhoc"),
   /** Cloud target id; may also be supplied as the `?target=` query param. */
   target: z.string().min(1).optional(),
-  rows: z
-    .array(z.object({ entity: z.string().min(1), data: z.record(z.unknown()) }))
-    .default([]),
+  rows: z.array(z.object({ entity: z.string().min(1), data: z.record(z.unknown()) })).default([]),
   dryRun: z.boolean().default(false),
   targetConfig: z.record(z.unknown()).default({}),
 });
@@ -416,7 +414,7 @@ export async function migrationRoutes(app: FastifyInstance): Promise<void> {
       bundle,
       makeStubContext(),
       parsed.data.rows.map((r) => ({ entity: r.entity, data: coerceRow(r.data) })),
-      { migrationRunId: parsed.data.runId, dryRun: parsed.data.dryRun },
+      { migrationRunId: parsed.data.runId, dryRun: parsed.data.dryRun }
     );
     return { runId: parsed.data.runId, target, summary };
   });
