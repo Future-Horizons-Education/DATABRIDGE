@@ -5,9 +5,7 @@
  * families) extend this with a fixed spec so each package stays thin while
  * the validate→stage→commit→rollback lifecycle remains shared.
  */
-import type {
-  TargetAdapterCapabilities,
-} from "@databridge/adapter-spec";
+import type { TargetAdapterCapabilities } from "@databridge/adapter-spec";
 import { BaseTargetAdapter } from "./base-target-adapter.js";
 import type { TargetTransport } from "./transport.js";
 

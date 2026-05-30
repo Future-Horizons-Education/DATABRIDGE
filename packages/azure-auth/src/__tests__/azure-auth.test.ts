@@ -12,7 +12,11 @@ function makeCtx(secrets: Record<string, string> = {}): AdapterContext {
   return {
     tenantId: "test",
     connectionId: "conn",
-    secrets: { async get(k: string) { return secrets[k] ?? ""; } },
+    secrets: {
+      async get(k: string) {
+        return secrets[k] ?? "";
+      },
+    },
     logger: { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} },
     signal: new AbortController().signal,
   };
@@ -41,7 +45,7 @@ describe("resolveAzureCredential", () => {
     const cred = await resolveAzureCredential(
       makeCtx(),
       { mode: "az-cli" },
-      { tokenProvider: async () => undefined },
+      { tokenProvider: async () => undefined }
     );
     expect(cred).toBeUndefined();
   });
@@ -52,7 +56,11 @@ describe("resolveAzureCredential", () => {
     const cred = await resolveAzureCredential(
       ctx,
       { mode: "managed-identity" },
-      { tokenProvider: async () => { throw new Error("boom"); } },
+      {
+        tokenProvider: async () => {
+          throw new Error("boom");
+        },
+      }
     );
     expect(cred).toBeUndefined();
     expect(warn).toHaveBeenCalledOnce();
@@ -65,10 +73,14 @@ describe("resolveAzureCredential", () => {
       return "tok";
     };
     await resolveAzureCredential(makeCtx(), { mode: "az-cli" }, { tokenProvider: provider });
-    await resolveAzureCredential(makeCtx(), { mode: "az-cli" }, {
-      tokenProvider: provider,
-      scope: AZURE_SQL_SCOPE,
-    });
+    await resolveAzureCredential(
+      makeCtx(),
+      { mode: "az-cli" },
+      {
+        tokenProvider: provider,
+        scope: AZURE_SQL_SCOPE,
+      }
+    );
     expect(seen).toEqual([AZURE_ARM_SCOPE, AZURE_SQL_SCOPE]);
   });
 
@@ -76,7 +88,7 @@ describe("resolveAzureCredential", () => {
     const cred = await resolveAzureCredential(
       makeCtx(),
       { mode: "managed-identity" },
-      { tokenProvider: async () => "tok" },
+      { tokenProvider: async () => "tok" }
     );
     expect(cred?.mode).toBe("managed-identity");
     expect(cred && "tenantId" in cred).toBe(false);
@@ -85,7 +97,7 @@ describe("resolveAzureCredential", () => {
 
   it("passes the auth config and context through to the provider", async () => {
     const provider = vi.fn<Parameters<AzureTokenProvider>, ReturnType<AzureTokenProvider>>(
-      async () => "tok",
+      async () => "tok"
     );
     const cfg: AzureAuthConfig = { mode: "az-cli" };
     const ctx = makeCtx();

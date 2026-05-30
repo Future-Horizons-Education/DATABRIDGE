@@ -58,7 +58,7 @@ describe("apps/api Phase C — cloud landing", () => {
         "oracle-goldengate",
         "oracle-adw",
         "oracle-oci-di",
-      ]),
+      ])
     );
     const adf = body.targets.find((t) => t.id === "azure-adf");
     expect(adf?.family).toBe("azure");

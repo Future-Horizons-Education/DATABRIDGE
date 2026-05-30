@@ -8,10 +8,7 @@
  * bearer token is resolved through `@databridge/azure-auth`, and when no
  * credential is available the adapter runs in deterministic stub mode.
  */
-import type {
-  AdapterContext,
-  TargetAdapterCapabilities,
-} from "@databridge/adapter-spec";
+import type { AdapterContext, TargetAdapterCapabilities } from "@databridge/adapter-spec";
 import {
   BufferedTargetTransport,
   ConfigurableTargetAdapter,
@@ -45,7 +42,7 @@ const ADF_CAPABILITIES: TargetAdapterCapabilities = {
 export class AzureAdfTargetAdapter extends ConfigurableTargetAdapter {
   constructor(
     transport: TargetTransport,
-    opts: { requiredFieldsByEntity?: Record<string, readonly string[]> } = {},
+    opts: { requiredFieldsByEntity?: Record<string, readonly string[]> } = {}
   ) {
     const spec: ConfigurableTargetAdapterSpec = {
       id: "azure-adf",
@@ -62,7 +59,7 @@ export class AzureAdfTargetAdapter extends ConfigurableTargetAdapter {
 /** Render a deployable ADF pipeline JSON from the buffered rows. */
 export function renderAdfPipeline(
   cfg: AzureAdfConfig,
-  transport: BufferedTargetTransport,
+  transport: BufferedTargetTransport
 ): CloudArtifact {
   const activities = transport.entities().map((entity) => ({
     name: `Copy_${entity}`,
@@ -75,9 +72,7 @@ export function renderAdfPipeline(
         tableOption: "autoCreate",
       },
     },
-    inputs: [
-      { referenceName: `databridge_src_${entity}`, type: "DatasetReference" },
-    ],
+    inputs: [{ referenceName: `databridge_src_${entity}`, type: "DatasetReference" }],
     outputs: [
       {
         referenceName: cfg.datasetByEntity?.[entity] ?? entity,
@@ -112,21 +107,19 @@ export interface BuildAzureAdfOptions {
 export async function buildAzureAdfTarget(
   ctx: AdapterContext,
   cfg: AzureAdfConfig,
-  opts: BuildAzureAdfOptions = {},
+  opts: BuildAzureAdfOptions = {}
 ): Promise<CloudTargetBundle> {
   const credential = await resolveAzureCredential(
     ctx,
     cfg.auth,
-    opts.tokenProvider ? { tokenProvider: opts.tokenProvider } : {},
+    opts.tokenProvider ? { tokenProvider: opts.tokenProvider } : {}
   );
   const transport = new BufferedTargetTransport(
-    opts.sink ? { idPrefix: "adf", sink: opts.sink } : { idPrefix: "adf" },
+    opts.sink ? { idPrefix: "adf", sink: opts.sink } : { idPrefix: "adf" }
   );
   const adapter = new AzureAdfTargetAdapter(
     transport,
-    opts.requiredFieldsByEntity
-      ? { requiredFieldsByEntity: opts.requiredFieldsByEntity }
-      : {},
+    opts.requiredFieldsByEntity ? { requiredFieldsByEntity: opts.requiredFieldsByEntity } : {}
   );
   return {
     adapter,

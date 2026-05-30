@@ -289,7 +289,7 @@ async function main(argv: readonly string[]): Promise<void> {
   // unaffected.
   maybeLaunchWeb(
     { launchWeb: opts.launchWeb, queryBarUrl: report.urls.queryBar },
-    await defaultLaunchWebDeps(),
+    await defaultLaunchWebDeps()
   );
 }
 
