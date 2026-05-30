@@ -38,11 +38,13 @@ import {
   SCRIPTED_PROMPTS,
   type ScriptedPromptResult,
 } from "./llm-walkthrough.js";
+import { maybeLaunchWeb, defaultLaunchWebDeps } from "./launch-web.js";
 
 interface CliOptions {
   fixturesDir: string;
   dryRun: boolean;
   json: boolean;
+  launchWeb: boolean;
 }
 
 function parseArgs(argv: readonly string[]): CliOptions {
@@ -50,6 +52,7 @@ function parseArgs(argv: readonly string[]): CliOptions {
     fixturesDir: defaultFixturesDir(),
     dryRun: true,
     json: false,
+    launchWeb: false,
   };
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
@@ -62,6 +65,8 @@ function parseArgs(argv: readonly string[]): CliOptions {
       opts.dryRun = false;
     } else if (a === "--json") {
       opts.json = true;
+    } else if (a === "--launch-web") {
+      opts.launchWeb = true;
     } else if (a === "--help" || a === "-h") {
       printUsage();
       process.exit(0);
@@ -86,6 +91,7 @@ function printUsage(): void {
       "  -f, --fixtures <path>   Path to the fixtures directory (defaults to ../fixtures)",
       "      --commit            Execute migrations (default: dry-run)",
       "      --json              Emit a single JSON report on stdout instead of human-readable text",
+      "      --launch-web        Start apps/web (next dev) and print the query-bar URL (default: off)",
       "  -h, --help              Show this help",
       "",
       "After running, open: http://localhost:3000 (api) and http://localhost:5173 (web).",
@@ -281,6 +287,14 @@ async function main(argv: readonly string[]): Promise<void> {
     return;
   }
   printHumanReport(report, opts);
+
+  // C3: optionally bring up apps/web and surface the query-bar URL. Off by
+  // default so hermetic runs and presenters managing their own stack are
+  // unaffected.
+  maybeLaunchWeb(
+    { launchWeb: opts.launchWeb, queryBarUrl: report.urls.queryBar },
+    await defaultLaunchWebDeps(),
+  );
 }
 
 function printHumanReport(report: DemoReport, opts: CliOptions): void {

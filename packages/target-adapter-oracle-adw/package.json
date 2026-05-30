@@ -1,0 +1,37 @@
+{
+  "name": "@databridge/target-adapter-oracle-adw",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Phase C2 — Oracle Autonomous Data Warehouse target adapter. Lands canonical rows via wallet-based connection; renders the deployable Oracle MERGE/INSERT load script. Dry-run / stub by default; live load via an injected sink + @databridge/oracle-auth credential.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src --ext .ts",
+    "test": "vitest run --passWithNoTests",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@databridge/adapter-spec": "workspace:*",
+    "@databridge/target-adapters": "workspace:*",
+    "@databridge/oracle-auth": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0",
+    "eslint": "^8.57.0",
+    "@typescript-eslint/parser": "^7.8.0",
+    "@typescript-eslint/eslint-plugin": "^7.8.0"
+  }
+}

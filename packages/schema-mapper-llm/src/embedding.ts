@@ -90,54 +90,190 @@ function fnv1a(s: string): number {
  *  ONNX backend (peer-optional)
  * ───────────────────────────────────────────────────────────────────── */
 
+/** Token ids + attention mask for one encoded string. */
+export interface TokeniserEncoding {
+  inputIds: number[];
+  attentionMask: number[];
+}
+
+/** A WordPiece/BPE tokeniser for the sentence-transformer model. */
+export interface OnnxTokeniser {
+  encode(text: string): TokeniserEncoding;
+}
+
+/** Minimal ONNX tensor shape (matches `onnxruntime-node`'s Tensor). */
+export interface OnnxTensorLike {
+  data: ArrayLike<number> | ArrayLike<bigint>;
+  dims: readonly number[];
+}
+
+/** Minimal ONNX session surface — the subset we invoke. */
+export interface OnnxSessionLike {
+  run(feeds: Record<string, unknown>): Promise<Record<string, OnnxTensorLike>>;
+}
+
 export interface OnnxEmbeddingOptions {
   /** Path to the .onnx model file on disk. */
   modelPath: string;
   /** Model output dimension. Defaults to 384 (all-MiniLM-L6-v2). */
   dimensions?: number;
+  /**
+   * Tokeniser. Defaults to a lightweight hashing tokeniser — a stand-in
+   * that keeps the pipeline runnable. A faithful WordPiece tokeniser with
+   * the model's `vocab.txt` should be supplied for production parity (see
+   * the install procedure in the package README).
+   */
+  tokeniser?: OnnxTokeniser;
+  /** Test/custom seam — build a session without `onnxruntime-node`. */
+  sessionFactory?: (modelPath: string) => Promise<OnnxSessionLike | undefined>;
+  /** Name of the model output to mean-pool. Defaults to "last_hidden_state". */
+  outputName?: string;
+  /** Vocab size used by the default hashing tokeniser. Defaults to 30522. */
+  vocabSize?: number;
 }
 
 /**
- * ONNX-runtime backed embedding. Loads `onnxruntime-node` lazily; if the
- * package is not installed, returns a fallback hash-based embedding so
- * the call never throws. Production deployments install the package and
- * supply a model path.
+ * Lightweight stand-in tokeniser: maps word/sub-word tokens to ids in
+ * `[0, vocabSize)` via FNV-1a, with [CLS]/[SEP] sentinels and an all-ones
+ * attention mask. Deterministic and dependency-free. Not vocabulary-faithful
+ * to all-MiniLM — supply a real WordPiece tokeniser for production parity.
+ */
+export class HashingTokeniser implements OnnxTokeniser {
+  constructor(private readonly vocabSize: number = 30522) {}
+
+  encode(text: string): TokeniserEncoding {
+    const CLS = 101;
+    const SEP = 102;
+    const ids: number[] = [CLS];
+    for (const tok of tokenise(normalise(text))) {
+      ids.push((fnv1a(tok) % (this.vocabSize - 103)) + 103);
+    }
+    ids.push(SEP);
+    return { inputIds: ids, attentionMask: ids.map(() => 1) };
+  }
+}
+
+/**
+ * Mean-pool a `[1, seqLen, hidden]` model output over the attention mask
+ * and L2-normalise — the standard sentence-transformer pooling.
+ */
+export function meanPool(
+  data: ArrayLike<number>,
+  dims: readonly number[],
+  attentionMask: readonly number[],
+): Float32Array {
+  const seqLen = dims[1] ?? 0;
+  const hidden = dims[2] ?? 0;
+  const out = new Float32Array(hidden);
+  let counted = 0;
+  for (let t = 0; t < seqLen; t += 1) {
+    if ((attentionMask[t] ?? 1) === 0) continue;
+    counted += 1;
+    const base = t * hidden;
+    for (let h = 0; h < hidden; h += 1) {
+      out[h] = (out[h] ?? 0) + Number(data[base + h] ?? 0);
+    }
+  }
+  const denom = counted || 1;
+  for (let h = 0; h < hidden; h += 1) out[h] = (out[h] ?? 0) / denom;
+  return l2normalise(out);
+}
+
+function l2normalise(v: Float32Array): Float32Array {
+  let sumSq = 0;
+  for (let i = 0; i < v.length; i += 1) sumSq += v[i]! * v[i]!;
+  const norm = Math.sqrt(sumSq) || 1;
+  for (let i = 0; i < v.length; i += 1) v[i] = v[i]! / norm;
+  return v;
+}
+
+interface OnnxRuntimeModuleLike {
+  InferenceSession?: { create: (modelPath: string) => Promise<OnnxSessionLike> };
+  Tensor?: new (type: string, data: unknown, dims: readonly number[]) => unknown;
+}
+
+/**
+ * ONNX-runtime backed embedding. Loads `onnxruntime-node` lazily; when the
+ * package or the model file is absent it falls back to the deterministic
+ * hash embedding so the call never throws. When a session is available it
+ * runs the real pipeline: tokenise → session.run → mean-pool → normalise.
+ *
+ * Production deployments install `onnxruntime-node`, set
+ * `DATABRIDGE_EMBEDDINGS_ONNX_PATH` to the model file, and supply a faithful
+ * WordPiece tokeniser. See the package README for the install procedure.
  */
 export class OnnxEmbedding implements EmbeddingBackend {
   readonly id = "onnx";
   readonly dimensions: number;
   private readonly fallback: DeterministicHashEmbedding;
-  private sessionPromise?: Promise<unknown>;
+  private readonly tokeniser: OnnxTokeniser;
+  private readonly outputName: string;
+  private sessionPromise?: Promise<OnnxSessionLike | undefined>;
+  private tensorCtor:
+    | (new (type: string, data: unknown, dims: readonly number[]) => unknown)
+    | undefined;
   private readonly options: OnnxEmbeddingOptions;
 
   constructor(options: OnnxEmbeddingOptions) {
     this.options = options;
     this.dimensions = options.dimensions ?? 384;
     this.fallback = new DeterministicHashEmbedding(this.dimensions);
+    this.tokeniser = options.tokeniser ?? new HashingTokeniser(options.vocabSize);
+    this.outputName = options.outputName ?? "last_hidden_state";
   }
 
   async embed(text: string): Promise<Float32Array> {
-    // The Phase B brief deliberately allows this fallback: when ONNX
-    // isn't installed (test sandbox, no GPU host, etc.), the embedding
-    // still works — it just becomes the deterministic hash variant.
     const session = await this.loadSession();
     if (!session) return this.fallback.embed(text);
-    // Production wiring would tokenise + run the session here. For
-    // Phase B we ship the peer-optional plumbing but defer the real
-    // tokeniser to Phase C / D when the model file is also shipped.
-    return this.fallback.embed(text);
+    try {
+      const enc = this.tokeniser.encode(text);
+      const outputs = await session.run(this.buildFeeds(enc));
+      const tensor = outputs[this.outputName] ?? Object.values(outputs)[0];
+      if (!tensor) return this.fallback.embed(text);
+      return meanPool(
+        tensor.data as ArrayLike<number>,
+        tensor.dims,
+        enc.attentionMask,
+      );
+    } catch {
+      // Any inference error degrades gracefully to the deterministic path.
+      return this.fallback.embed(text);
+    }
   }
 
-  private async loadSession(): Promise<unknown | undefined> {
+  /**
+   * Build session feeds. Uses the runtime's `Tensor` when available (live
+   * path); otherwise emits plain `{ type, data, dims }` objects that an
+   * injected fake session can consume.
+   */
+  private buildFeeds(enc: TokeniserEncoding): Record<string, unknown> {
+    const len = enc.inputIds.length;
+    const T = this.tensorCtor;
+    if (T) {
+      const toI64 = (xs: number[]): BigInt64Array =>
+        BigInt64Array.from(xs.map((x) => BigInt(x)));
+      return {
+        input_ids: new T("int64", toI64(enc.inputIds), [1, len]),
+        attention_mask: new T("int64", toI64(enc.attentionMask), [1, len]),
+        token_type_ids: new T("int64", toI64(enc.inputIds.map(() => 0)), [1, len]),
+      };
+    }
+    return {
+      input_ids: { type: "int64", data: enc.inputIds, dims: [1, len] },
+      attention_mask: { type: "int64", data: enc.attentionMask, dims: [1, len] },
+    };
+  }
+
+  private async loadSession(): Promise<OnnxSessionLike | undefined> {
     if (this.sessionPromise === undefined) {
       this.sessionPromise = (async () => {
+        if (this.options.sessionFactory) {
+          return this.options.sessionFactory(this.options.modelPath);
+        }
         try {
-          const mod = (await import("onnxruntime-node")) as {
-            InferenceSession?: {
-              create: (modelPath: string) => Promise<unknown>;
-            };
-          };
+          const mod = (await import("onnxruntime-node")) as OnnxRuntimeModuleLike;
           if (!mod.InferenceSession) return undefined;
+          if (mod.Tensor) this.tensorCtor = mod.Tensor;
           return await mod.InferenceSession.create(this.options.modelPath);
         } catch {
           return undefined;

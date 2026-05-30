@@ -1,0 +1,47 @@
+{
+  "name": "@databridge/oracle-auth",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Phase C2 — shared Oracle / OCI authentication for DATABRIDGE cloud target adapters. Resolves a credential via wallet (secrets-backed password), IAM, or instance principal. oracledb / oci-common are optional peer deps, lazy-loaded only for live connections; tests inject a fake token provider and fall back to stub mode.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src --ext .ts",
+    "test": "vitest run --passWithNoTests",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@databridge/adapter-spec": "workspace:*"
+  },
+  "peerDependencies": {
+    "oracledb": "^6.0.0",
+    "oci-common": "^2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "oracledb": {
+      "optional": true
+    },
+    "oci-common": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0",
+    "eslint": "^8.57.0",
+    "@typescript-eslint/parser": "^7.8.0",
+    "@typescript-eslint/eslint-plugin": "^7.8.0"
+  }
+}

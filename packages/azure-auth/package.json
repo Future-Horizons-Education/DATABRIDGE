@@ -1,0 +1,43 @@
+{
+  "name": "@databridge/azure-auth",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Phase C1 — shared Azure authentication for DATABRIDGE cloud target adapters. Resolves an ARM / data-plane bearer token via managed identity, service principal, or az-cli local dev. @azure/identity is an optional peer dep, lazy-loaded only when a live token is requested; tests and the hermetic demo inject a fake token provider and fall back to stub mode.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src --ext .ts",
+    "test": "vitest run --passWithNoTests",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@databridge/adapter-spec": "workspace:*"
+  },
+  "peerDependencies": {
+    "@azure/identity": "^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@azure/identity": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0",
+    "eslint": "^8.57.0",
+    "@typescript-eslint/parser": "^7.8.0",
+    "@typescript-eslint/eslint-plugin": "^7.8.0"
+  }
+}
